@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Modding;
 
-namespace TransmissionBlockMod_Besiege
+namespace TransmissionBlockMod
 {
-    public class Class1
+    public class Modloader: ModEntryPoint
     {
+
+
     }
 }
