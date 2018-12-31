@@ -169,11 +169,11 @@
 	
 	<AddingPoints>
 		<!-- TODO: Insert AddingPoint definitions here. Example:-->
-		<AddingPoint>
+		<!--<AddingPoint>
 			<Position x="0.0" y="0.0" z="1" />
 			<Rotation x="0.0" y="0.0" z="0.0" />
 			<Stickiness enabled="true" radius="0.5"/>
-		</AddingPoint>
+		</AddingPoint>-->
 
 		<AddingPoint>
 			<Position x="0.55" y="0.0" z="0.5" />
