@@ -8,82 +8,67 @@ using UnityEngine;
 
 class TransmissionBlockScript : BlockScript
 {
-    MKey mKey;
-
-    ConfigurableJoint CJ,outAxisCJ;
+    MKey UpKey, DownKey,BackKey;
+    MKey ClutchKey;
+    MSlider StrengthSlider;
+    MSlider RatioSlider;
 
     HingeJoint HJ;
-
-    GameObject addingPoint,axis;
-
-    Rigidbody parentRigidbody;
+    GameObject OutAxis;
+    Rigidbody parentRigidbody,axisRigidbody;
 
     public float AngularVelocity { get; private set; } = 0f;
     public float ParentAngularVelocity { get; private set; } = 0f;
-    public float strength { get; set; } = 1000f;
+
+    public bool Clutch { get { return !ClutchKey.IsDown; } set { Clutch = value; } }
+    public float Strength { get; set; } = 1f;
+    public float Ratio { get; set; } = 1f;
+
+    public int Input { get; set; } = 1;
 
 
     private float deltaAngularVelocity = 0f;
 
     public override void SafeAwake()
     {
-        mKey = AddKey("test", "test", KeyCode.B);
-       
+        UpKey = AddKey("加挡", "Up", KeyCode.U);
+        DownKey = AddKey("减挡", "Down", KeyCode.J);
+        BackKey = AddKey("倒挡", "Back", KeyCode.K);
+        ClutchKey = AddKey("离合", "Clutch", KeyCode.C);
+        StrengthSlider = AddSlider("马力", "Force", Strength, 0, 10f);
+        RatioSlider = AddSlider("比例", "Ratio", Ratio, 0f, 2f);
 
-        //addingPoint = GetComponentsInChildren<Transform>()[0].gameObject;
-        //addingPoint.GetComponent<BoxCollider>().enabled = false;
-        CJ = GetComponent<ConfigurableJoint>();
+        StrengthSlider.ValueChanged += (value) => { Strength = value; };
+        RatioSlider.ValueChanged += (value) => { Ratio = value; };
 
-        axis = null;
+        OutAxis = null;
         foreach (var go in GetComponentsInChildren<Transform>())
         {
-            if (go.name == "OutAxis")
-            {
-                axis = go.gameObject;
-            }
+            if (go.name == "OutAxis") { OutAxis = go.gameObject; }
         }
 
-        if (axis == null)
+        if (OutAxis == null)
         {
-            axis = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            axis.name = "OutAxis";
-            axis.transform.SetParent(transform);
-            axis.transform.position = transform.TransformPoint(transform.InverseTransformPoint(transform.position) + Vector3.forward);
-            axis.transform.rotation = transform.rotation;
-            axis.transform.localEulerAngles = Vector3.right * 90f;
-            axis.transform.localScale = Vector3.one * 0.2f;
+            OutAxis = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            OutAxis.name = "OutAxis";
+            OutAxis.transform.SetParent(transform);
+            OutAxis.transform.position = transform.TransformPoint(transform.InverseTransformPoint(transform.position) + Vector3.forward);
+            OutAxis.transform.rotation = transform.rotation;
+            OutAxis.transform.localEulerAngles = Vector3.right * 90f;
+            OutAxis.transform.localScale = Vector3.one * 0.2f;
 
-            outAxisCJ = axis.AddComponent<ConfigurableJoint>();
-            outAxisCJ.axis = Vector3.up;
-            outAxisCJ.connectedBody = Rigidbody;
-            outAxisCJ.xMotion = outAxisCJ.yMotion = outAxisCJ.zMotion = ConfigurableJointMotion.Locked;
-            //outAxisCJ.angularXMotion = outAxisCJ.angularYMotion = outAxisCJ.angularZMotion = ConfigurableJointMotion.Locked;
-            ////outAxisCJ.angularXDrive = new JointMotor {   };
-            ////outAxisCJ.rotationDriveMode = RotationDriveMode.Slerp;
-            //outAxisCJ.slerpDrive = new JointDrive { maximumForce = 1000f };
-            //axis.GetComponent<Rigidbody>().isKinematic = true;
-            //axis.AddComponent<Rigidbody>().isKinematic = true;
-            //axis.AddComponent<Rigidbody>();
+            HJ = OutAxis.AddComponent<HingeJoint>();
+            HJ.axis = OutAxis.transform.forward;
+            HJ.connectedBody = Rigidbody;     
+            HJ.useMotor = false;
 
-            //HJ = axis.AddComponent<HingeJoint>();
-            //HJ.connectedBody = Rigidbody;
-            //HJ.motor = new JointMotor { targetVelocity = 5000f, freeSpin = true, force = 10000f };
-            //HJ.axis = axis.transform.forward;
-            //HJ.useMotor = false;
-            AddPoint(axis);
-            //addingPoint.transform.SetParent(axis.transform);
-            //GameObject point = (GameObject)Instantiate(addingPoint);
-            //point.transform.SetParent(axis.transform);
-            //axis.layer = 12;
-       
+            AddPoint(OutAxis);         
         }
         else
         {
-            outAxisCJ = axis.GetComponent<ConfigurableJoint>();
-            //HJ = axis.GetComponent<HingeJoint>();
+            HJ = OutAxis.GetComponent<HingeJoint>();
         }
-
-
+        axisRigidbody = OutAxis.GetComponent<Rigidbody>();
     }
 
     public override void OnSimulateStart()
@@ -100,32 +85,49 @@ class TransmissionBlockScript : BlockScript
 
             deltaAngularVelocity = AngularVelocity - ParentAngularVelocity;
 
-            //addingPoint.transform.RotateAround(addingPoint.transform.position, addingPoint.transform.forward, deltaAngularVelocity * Time.deltaTime);
+            int sign = 0;
+            if (UpKey.IsPressed) sign = 1;
+            if (DownKey.IsPressed) sign = -1;
+            if (sign != 0) Input = Mathf.Clamp(Input + sign, 1, 4);      
+            if (BackKey.IsPressed) Input = -1;
 
+            if (Clutch)
+            {
+                if (Mathf.Abs(deltaAngularVelocity) < 0.1f)
+                {
+                    if (!HJ.useLimits)
+                    {
+                        float angle = HJ.angle;
 
-            //axis.GetComponent<Rigidbody>().AddRelativeTorque(axis.transform.position * 60 * Time.deltaTime, ForceMode.Impulse);
+                        HJ.limits = new JointLimits { min = angle - 0.5f, max = angle + 0.5f, contactDistance = 0.5f, bounciness = 0f, bounceMinVelocity = 0f };
+                        HJ.useLimits = true;
+                    }
+                }
+                else
+                {
+                    HJ.useLimits = false;
 
-            //axis.transform.localEulerAngles += Vector3.right  * 10f;
+                    HJ.motor = new JointMotor { force = Strength * 10000f, freeSpin = false, targetVelocity = (deltaAngularVelocity * 57.5f) * Ratio * Input };
+                    HJ.useMotor = true;
+                }
+            }
+            else
+            {
+                HJ.useMotor = false;
+                HJ.useLimits = false;
+            }           
         }
 
-        //Debug.Log(axis == null);
-       
+
+        GetComponent<ConfigurableJoint>().targetRotation = Quaternion.Euler(GetComponent<ConfigurableJoint>().axis * 10f);
     }
 
-    public override void SimulateFixedUpdateAlways()
-    {
-        //axis.GetComponent<Rigidbody>().AddRelativeTorque(Vector3.up * strength, ForceMode.Force);
-        //outAxisCJ.targetAngularVelocity = Vector3.up * 1000f;
-        //outAxisCJ.targetRotation = Quaternion.AngleAxis(10, Vector3.up);
-        //HJ.useMotor = true;
-        axis.GetComponent<Rigidbody>().MoveRotation(Quaternion.AngleAxis(10f, axis.transform.forward));
-    }
 
     private IEnumerator GetParentRigidbody()
     {
         while (true)
         {
-            parentRigidbody = CJ.connectedBody;
+            parentRigidbody = GetComponent<ConfigurableJoint>().connectedBody;
             if (parentRigidbody != null)
             {
                 yield break;
@@ -140,7 +142,7 @@ class TransmissionBlockScript : BlockScript
         point.transform.SetParent(parentObject.transform);
         point.transform.position = parentObject.transform.position;
         //point.transform.localScale = new Vector3(0.6f, 0.6f, 0.6f);
-        point.layer = 12;
+        point.layer = 14;
 
         BoxCollider boxCollider = point.AddComponent<BoxCollider>()/*point.GetComponent<BoxCollider>()*/ ;
         boxCollider.center = new Vector3(0, 0, -0.5f);
