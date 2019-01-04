@@ -10,12 +10,16 @@ class TransmissionBlockScript : BlockScript
 {
     MKey UpKey, DownKey,BackKey;
     MKey ClutchKey;
+    MMenu ModelMenu;
     MSlider StrengthSlider;
     MSlider RatioSlider;
+    
 
     GameObject OutAxis;
-    ConfigurableJoint CJ,CJ_Axis;
-    Rigidbody parentRigidbody,axisRigidbody;
+    ConfigurableJoint CJ, CJ_Axis;
+    Rigidbody parentRigidbody, axisRigidbody;
+
+    //HingeJoint HJ;
 
     public float AngularVelocity { get; private set; } = 0f;
     public float ParentAngularVelocity { get; private set; } = 0f;
@@ -24,6 +28,12 @@ class TransmissionBlockScript : BlockScript
     public float Strength { get; set; } = 1f;
     public float Ratio { get; set; } = 1f;
 
+    public enum model
+    {
+        speed = 0,
+        angle = 1
+    }
+    public model Model { get; set; } = model.angle;
     public int Input { get; set; } = 1;
 
 
@@ -35,9 +45,11 @@ class TransmissionBlockScript : BlockScript
         DownKey = AddKey("减挡", "Down", KeyCode.J);
         BackKey = AddKey("倒挡", "Back", KeyCode.K);
         ClutchKey = AddKey("离合", "Clutch", KeyCode.C);
+        ModelMenu = AddMenu("Model", 0, new List<string> { "速度模式", "角度模式" });
         StrengthSlider = AddSlider("马力", "Force", Strength, 0, 10f);
         RatioSlider = AddSlider("比例", "Ratio", Ratio, 0f, 2f);
 
+        ModelMenu.ValueChanged += (value) => { Model = (model)ModelMenu.Value; DisplayInMapper(); };
         StrengthSlider.ValueChanged += (value) => { Strength = value; };
         RatioSlider.ValueChanged += (value) => { Ratio = value; };
 
@@ -46,7 +58,7 @@ class TransmissionBlockScript : BlockScript
         {
             if (go.name == "OutAxis") { OutAxis = go.gameObject; }
         }
-        
+
         if (OutAxis == null)
         {
             OutAxis = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -58,14 +70,13 @@ class TransmissionBlockScript : BlockScript
             OutAxis.transform.localScale = Vector3.one * 0.2f;
 
             CJ_Axis = OutAxis.AddComponent<ConfigurableJoint>();
-            CJ_Axis.axis = Vector3.up;CJ_Axis.secondaryAxis = Vector3.right;
+            CJ_Axis.axis = Vector3.up; CJ_Axis.secondaryAxis = Vector3.right;
             CJ_Axis.connectedBody = Rigidbody;
             CJ_Axis.angularYMotion = CJ_Axis.angularZMotion = ConfigurableJointMotion.Locked;
             CJ_Axis.xMotion = CJ_Axis.yMotion = CJ_Axis.zMotion = ConfigurableJointMotion.Locked;
             CJ_Axis.rotationDriveMode = RotationDriveMode.XYAndZ;
- 
-            
-            AddPoint(OutAxis, Vector3.up * -1.25f, Vector3.right * 90f, true);         
+
+            AddPoint(OutAxis, Vector3.up * -1.25f, Vector3.right * 90f, true);
         }
         else
         {
@@ -74,10 +85,17 @@ class TransmissionBlockScript : BlockScript
         axisRigidbody = OutAxis.GetComponent<Rigidbody>();
 
         CJ = GetComponent<ConfigurableJoint>();
+
+        DisplayInMapper();
+    }
+
+    void DisplayInMapper()
+    {
+        ClutchKey.DisplayInMapper = (Model == model.speed);
     }
 
     public override void OnSimulateStart()
-    {    
+    {
         StartCoroutine(GetParentRigidbody());
     }
 
@@ -90,47 +108,35 @@ class TransmissionBlockScript : BlockScript
 
             deltaAngularVelocity = (AngularVelocity - ParentAngularVelocity) * (Flipped ? 1 : -1);
 
+            float feedSpeed = deltaAngularVelocity * Ratio * Input * 57.5f * 0.4f * Time.deltaTime; ;
+
             int sign = 0;
             if (UpKey.IsPressed) sign = 1;
             if (DownKey.IsPressed) sign = -1;
             if (sign != 0) Input = Mathf.Clamp(Input + sign, 1, 4);
-            if (BackKey.IsPressed) Input = -1 ;
+            if (BackKey.IsPressed) Input = -1;
 
-            float angle = 0f;
-            Vector3 axis = Vector3.right;
-            CJ_Axis.targetRotation.ToAngleAxis(out angle, out axis);
-
-            float angle1 = 0f;
-            Vector3 axis1 = Vector3.right;
-            CJ_Axis.transform.rotation.ToAngleAxis(out angle1, out axis1);
-
-            Debug.Log(angle + "   " + (angle1) + "  " + (angle + angle1));
-
-            if (Clutch)
+            if (Model == model.speed)
             {
-                CJ_Axis.angularXDrive = new JointDrive { maximumForce = Strength * 1000f, positionDamper = 50f, positionSpring = Strength * 50000f };
-
-                float feedSpeed = deltaAngularVelocity * Ratio * Input * 57.5f * 0.4f * Time.deltaTime;       
-
-                if (feedSpeed + angle > 360f)
+                if (Clutch)
                 {
-                    angle -= 360f;
-                }
-                else if (feedSpeed + angle < 0f)
+                    CJ_Axis.angularXDrive = new JointDrive { maximumForce = Strength * 10000f, positionDamper = 50f, positionSpring = 0 };
+                    CJ_Axis.targetAngularVelocity = Vector3.right * feedSpeed * 2f;
+                }  
+                else
                 {
-                    angle += 360f;
+                    CJ_Axis.angularXDrive = new JointDrive { maximumForce = 0, positionDamper = 0, positionSpring = 0 };
                 }
-                CJ_Axis.targetRotation = Quaternion.AngleAxis(angle + feedSpeed, axis);
             }
             else
             {
-                CJ_Axis.angularXDrive = new JointDrive { maximumForce = 0, positionDamper = 0, positionSpring = 0 };
-                CJ_Axis.targetRotation = Quaternion.AngleAxis(angle1 /*+ 180f*/, axis);
+                CJ_Axis.angularXDrive = new JointDrive { maximumForce = Strength * 1000f, positionDamper = 50f, positionSpring = Strength * 50000f };
+                CJ_Axis.targetRotation *= Quaternion.Euler(feedSpeed, 0, 0);
             }
+
+           
         }
-
     }
-
 
     private IEnumerator GetParentRigidbody()
     {
