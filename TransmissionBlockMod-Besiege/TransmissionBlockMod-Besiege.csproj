@@ -54,6 +54,7 @@
   <ItemGroup />
   <ItemGroup>
     <Content Include="Resources\cylinder.png" />
+    <Content Include="Resources\pngElectricalPin.png" />
     <Content Include="XML\Mod.xml" />
     <Content Include="XML\TransmissionBlock.xml">
       <SubType>Designer</SubType>
@@ -61,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\cylinder.obj" />
+    <None Include="Resources\ElectricalPin.obj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
