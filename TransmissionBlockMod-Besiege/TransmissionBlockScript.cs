@@ -75,7 +75,7 @@ class TransmissionBlockScript : BlockScript
             CJ_Axis.angularYMotion = CJ_Axis.angularZMotion = ConfigurableJointMotion.Locked;
             CJ_Axis.xMotion = CJ_Axis.yMotion = CJ_Axis.zMotion = ConfigurableJointMotion.Locked;
             CJ_Axis.rotationDriveMode = RotationDriveMode.XYAndZ;
-
+         
             AddPoint(OutAxis, Vector3.up * -1.25f, Vector3.right * 90f, true);
         }
         else
@@ -83,6 +83,7 @@ class TransmissionBlockScript : BlockScript
             CJ_Axis = OutAxis.GetComponent<ConfigurableJoint>();
         }
         axisRigidbody = OutAxis.GetComponent<Rigidbody>();
+        axisRigidbody.isKinematic = true;
 
         CJ = GetComponent<ConfigurableJoint>();
 
@@ -97,6 +98,7 @@ class TransmissionBlockScript : BlockScript
     public override void OnSimulateStart()
     {
         StartCoroutine(GetParentRigidbody());
+        axisRigidbody.isKinematic = false;
     }
 
     public override void SimulateUpdateAlways()
