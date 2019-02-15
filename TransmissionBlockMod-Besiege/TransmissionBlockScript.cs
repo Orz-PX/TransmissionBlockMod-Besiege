@@ -19,35 +19,42 @@ class TransmissionBlockScript : BlockScript
     ConfigurableJoint CJ, CJ_Axis;
     Rigidbody parentRigidbody, axisRigidbody;
 
-    //HingeJoint HJ;
-
+    /// <summary>变速箱角速度</summary>
     public float AngularVelocity { get; private set; } = 0f;
+    /// <summary>输入轴角速度</summary>
     public float ParentAngularVelocity { get; private set; } = 0f;
 
+    /// <summary>离合</summary>
     public bool Clutch { get { return !ClutchKey.IsDown; } set { Clutch = value; } }
+    /// <summary>马力</summary>
     public float Strength { get; set; } = 1f;
+    /// <summary>变速比例</summary>
     public float Ratio { get; set; } = 1f;
+    /// <summary>总档数</summary>
+    public int Gears { get; set; } = 5;
 
     public enum model
     {
         speed = 0,
         angle = 1
     }
+    /// <summary>工作模式</summary>
     public model Model { get; set; } = model.angle;
+    /// <summary>输入量 当前档位</summary>
     public int Input { get; set; } = 1;
 
-
+    /// <summary>输入轴和变速箱的角速度差</summary>
     private float deltaAngularVelocity = 0f;
 
     public override void SafeAwake()
     {
-        UpKey = AddKey("加挡", "Up", KeyCode.U);
-        DownKey = AddKey("减挡", "Down", KeyCode.J);
-        BackKey = AddKey("倒挡", "Back", KeyCode.K);
-        ClutchKey = AddKey("离合", "Clutch", KeyCode.C);
-        ModelMenu = AddMenu("Model", 0, new List<string> { "速度模式", "角度模式" });
-        StrengthSlider = AddSlider("马力", "Force", Strength, 0, 10f);
-        RatioSlider = AddSlider("比例", "Ratio", Ratio, 0f, 2f);
+        UpKey = AddKey(LanguageManager.Instance.CurrentLanguage.UpKey, "Up", KeyCode.U);
+        DownKey = AddKey(LanguageManager.Instance.CurrentLanguage.DownKey, "Down", KeyCode.J);
+        BackKey = AddKey(LanguageManager.Instance.CurrentLanguage.BackKey, "Back", KeyCode.K);
+        ClutchKey = AddKey(LanguageManager.Instance.CurrentLanguage.ClutchKey, "Clutch", KeyCode.C);
+        ModelMenu = AddMenu("Model", 0, LanguageManager.Instance.CurrentLanguage.Model);
+        StrengthSlider = AddSlider(LanguageManager.Instance.CurrentLanguage.Strength, "Force", Strength, 0, 10f);
+        RatioSlider = AddSlider(LanguageManager.Instance.CurrentLanguage.Ratio, "Ratio", Ratio, 0f, 2f);
 
         ModelMenu.ValueChanged += (value) => { Model = (model)ModelMenu.Value; DisplayInMapper(); };
         StrengthSlider.ValueChanged += (value) => { Strength = value; };
@@ -110,12 +117,12 @@ class TransmissionBlockScript : BlockScript
 
             deltaAngularVelocity = (AngularVelocity - ParentAngularVelocity) * (Flipped ? 1 : -1);
 
-            float feedSpeed = deltaAngularVelocity * Ratio * Input * 57.5f * 0.4f * Time.deltaTime; ;
+            float feedSpeed = deltaAngularVelocity * Ratio * Input * 57.5f * 0.3f * Time.deltaTime; ;
 
             int sign = 0;
             if (UpKey.IsPressed) sign = 1;
             if (DownKey.IsPressed) sign = -1;
-            if (sign != 0) Input = Mathf.Clamp(Input + sign, 1, 4);
+            if (sign != 0) Input = Mathf.Clamp(Input + sign, 1, Gears);
             if (BackKey.IsPressed) Input = -1;
 
             if (Model == model.speed)
@@ -153,6 +160,7 @@ class TransmissionBlockScript : BlockScript
         }
     }
 
+    //添加连接点
     private void AddPoint(GameObject parentObject,Vector3 offset, Vector3 rotation,bool stickiness = false)
     {
         GameObject point = new GameObject("Adding Point");

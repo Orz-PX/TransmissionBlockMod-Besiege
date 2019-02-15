@@ -9,7 +9,7 @@
 	<Name>Transmission Block Mod</Name>
 	<Author>XultimateX</Author> <!-- FIX: Insert your name here. -->
 	<!-- Major.Minor.Build -->
-	<Version>0.0.1</Version>
+	<Version>0.9.8</Version>
 	
 	<Description>
 A newly created mod. <!-- FIX: Insert a short description here. -->
@@ -18,7 +18,7 @@ A newly created mod. <!-- FIX: Insert a short description here. -->
 	<!-- Square icon of the mod. Texture defined in the Resources section.
 		 This is displayed in the mod list and, if WorkshopThumbnail is not set, used as thumbnail when uploaded to the Steam workshop. -->
 	<!-- <Icon name="icon" /> -->
-	
+  <Icon name="Icon" />
 	<!-- Texture resource used as thumbnail when uploading the mod to the workshop.
 		 If this is not present, the Icon texture is used instead.
 		 This can be set to have different icons in the mod list and the workshop. -->
@@ -124,6 +124,7 @@ A newly created mod. <!-- FIX: Insert a short description here. -->
 		<!-- <Texture name="some-texture-name" path="some_texture_file.png" /> -->
     <Mesh name ="main-obj" path ="cylinder.obj"/>
     <Texture name="main-tex" path="cylinder.png"/>
+   <Texture name="Icon" path="Icon.png"/>
 	</Resources>
 
 

@@ -47,6 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LanguageManager.cs" />
     <Compile Include="Modloader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TransmissionBlockScript.cs" />
@@ -54,6 +55,7 @@
   <ItemGroup />
   <ItemGroup>
     <Content Include="Resources\cylinder.png" />
+    <Content Include="Resources\Icon.png" />
     <Content Include="Resources\pngElectricalPin.png" />
     <Content Include="XML\Mod.xml" />
     <Content Include="XML\TransmissionBlock.xml">
