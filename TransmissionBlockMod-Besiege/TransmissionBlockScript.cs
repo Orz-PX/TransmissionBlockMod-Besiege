@@ -36,7 +36,8 @@ class TransmissionBlockScript : BlockScript
     public enum model
     {
         speed = 0,
-        angle = 1
+        angle = 1,
+        transform=2
     }
     /// <summary>工作模式</summary>
     public model Model { get; set; } = model.angle;
@@ -45,6 +46,7 @@ class TransmissionBlockScript : BlockScript
 
     /// <summary>输入轴和变速箱的角速度差</summary>
     private float deltaAngularVelocity = 0f;
+    private float feedSpeed = 0f;
 
     public override void SafeAwake()
     {
@@ -56,7 +58,11 @@ class TransmissionBlockScript : BlockScript
         StrengthSlider = AddSlider(LanguageManager.Instance.CurrentLanguage.Strength, "Force", Strength, 0, 10f);
         RatioSlider = AddSlider(LanguageManager.Instance.CurrentLanguage.Ratio, "Ratio", Ratio, 0f, 2f);
 
-        ModelMenu.ValueChanged += (value) => { Model = (model)ModelMenu.Value; DisplayInMapper(); };
+        ModelMenu.ValueChanged += (value) => 
+        {
+            Model = (model)ModelMenu.Value;
+            DisplayInMapper();            
+        };
         StrengthSlider.ValueChanged += (value) => { Strength = value; };
         RatioSlider.ValueChanged += (value) => { Ratio = value; };
 
@@ -106,6 +112,15 @@ class TransmissionBlockScript : BlockScript
     {
         StartCoroutine(GetParentRigidbody());
         axisRigidbody.isKinematic = false;
+        Debug.Log(Model);
+        if (Model == model.transform)
+        {
+            axisRigidbody.constraints = RigidbodyConstraints.FreezeRotationY;
+        }
+        else
+        {
+            axisRigidbody.constraints = RigidbodyConstraints.None;
+        }
     }
 
     public override void SimulateUpdateAlways()
@@ -117,7 +132,7 @@ class TransmissionBlockScript : BlockScript
 
             deltaAngularVelocity = (AngularVelocity - ParentAngularVelocity) * (Flipped ? 1 : -1);
 
-            float feedSpeed = deltaAngularVelocity * Ratio * Input * 57.5f * 0.3f * Time.deltaTime; ;
+            feedSpeed = deltaAngularVelocity * Ratio * Input * 57.5f * 0.3f * Time.deltaTime; ;
 
             int sign = 0;
             if (UpKey.IsPressed) sign = 1;
@@ -137,13 +152,25 @@ class TransmissionBlockScript : BlockScript
                     CJ_Axis.angularXDrive = new JointDrive { maximumForce = 0, positionDamper = 0, positionSpring = 0 };
                 }
             }
-            else
+            else if(Model == model.angle)
             {
                 CJ_Axis.angularXDrive = new JointDrive { maximumForce = Strength * 1000f, positionDamper = 50f, positionSpring = Strength * 50000f };
                 CJ_Axis.targetRotation *= Quaternion.Euler(feedSpeed, 0, 0);
             }
 
            
+        }
+    }
+
+    public override void SimulateFixedUpdateAlways()
+    {
+        if (parentRigidbody != null)
+        {
+            if (Model == model.transform)
+            {
+                axisRigidbody.WakeUp();
+                axisRigidbody.MoveRotation(axisRigidbody.rotation * Quaternion.AngleAxis(feedSpeed, transform.TransformDirection(transform.InverseTransformDirection(Vector3.up))));
+            }
         }
     }
 

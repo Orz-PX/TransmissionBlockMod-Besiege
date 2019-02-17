@@ -65,7 +65,7 @@ public class Chinese : ILanguage
     public string DownKey { get; } = "减挡";
     public string BackKey { get; } = "倒挡";
     public string ClutchKey { get; } = "离合";
-    public List<string> Model { get; } = new List<string> { "速度模式", "角度模式" };
+    public List<string> Model { get; } = new List<string> { "速度模式", "角度模式" ,"变换模式"};
     public string Strength { get; } = "马力";
     public string Ratio { get; } = "变速比例";
 
@@ -77,7 +77,7 @@ public class English : ILanguage
     public string DownKey { get; } = "Reduce Gear";
     public string BackKey { get; } = "Reverse gear";
     public string ClutchKey { get; } = "Clutch";
-    public List<string> Model { get; } = new List<string> { "Speed", "Angle" };
+    public List<string> Model { get; } = new List<string> { "Speed", "Angle", "Transform" };
     public string Strength { get; } = "HorsePower";
     public string Ratio { get; } = "Ratio";
 }
