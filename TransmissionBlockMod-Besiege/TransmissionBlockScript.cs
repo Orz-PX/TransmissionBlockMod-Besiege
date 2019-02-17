@@ -106,6 +106,7 @@ class TransmissionBlockScript : BlockScript
     void DisplayInMapper()
     {
         ClutchKey.DisplayInMapper = (Model == model.speed);
+        StrengthSlider.DisplayInMapper = !(Model == model.transform);
     }
 
     public override void OnSimulateStart()
