@@ -105,7 +105,7 @@ class TransmissionBlockScript : BlockScript
 
     void DisplayInMapper()
     {
-        ClutchKey.DisplayInMapper = (Model == model.speed);
+        ClutchKey.DisplayInMapper = !(Model == model.angle);
         StrengthSlider.DisplayInMapper = !(Model == model.transform);
     }
 
@@ -113,15 +113,6 @@ class TransmissionBlockScript : BlockScript
     {
         StartCoroutine(GetParentRigidbody());
         axisRigidbody.isKinematic = false;
-        Debug.Log(Model);
-        if (Model == model.transform)
-        {
-            axisRigidbody.constraints = RigidbodyConstraints.FreezeRotationY;
-        }
-        else
-        {
-            axisRigidbody.constraints = RigidbodyConstraints.None;
-        }
     }
 
     public override void SimulateUpdateAlways()
@@ -169,8 +160,17 @@ class TransmissionBlockScript : BlockScript
         {
             if (Model == model.transform)
             {
-                axisRigidbody.WakeUp();
-                axisRigidbody.MoveRotation(axisRigidbody.rotation * Quaternion.AngleAxis(feedSpeed, transform.TransformDirection(transform.InverseTransformDirection(Vector3.up))));
+                if (!ClutchKey.IsDown)
+                {
+                    axisRigidbody.constraints = RigidbodyConstraints.FreezeRotationY;
+                    axisRigidbody.WakeUp();
+                    axisRigidbody.MoveRotation(axisRigidbody.rotation * Quaternion.AngleAxis(feedSpeed, transform.TransformDirection(transform.InverseTransformDirection(Vector3.up))));
+                }
+                else
+                {
+                    axisRigidbody.constraints = RigidbodyConstraints.None;
+                }
+               
             }
         }
     }
