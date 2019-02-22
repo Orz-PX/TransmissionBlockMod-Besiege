@@ -14,8 +14,13 @@ public class LanguageManager : SingleInstance<LanguageManager>
 
     private string currentLanguageName;
     private string lastLanguageName = "English";
-    
+
     public ILanguage CurrentLanguage { get; private set; } = new English();
+    Dictionary<string, ILanguage> Dic_Language = new Dictionary<string, ILanguage>
+    {
+        { "简体中文",new Chinese()},
+        { "English",new English()},
+    };
 
     void Awake()
     {
@@ -36,15 +41,17 @@ public class LanguageManager : SingleInstance<LanguageManager>
 
     void ChangLanguage(string value)
     {
-        if (value.Contains("中文"))
+        try
         {
-            CurrentLanguage = new Chinese();
+            CurrentLanguage = Dic_Language[value];
         }
-        else
+        catch
         {
-            CurrentLanguage = new English();
+            CurrentLanguage = Dic_Language["English"];
         }
     }
+
+
 }
 
 public interface ILanguage
