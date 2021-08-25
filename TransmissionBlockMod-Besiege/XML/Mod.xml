@@ -89,6 +89,7 @@ A newly created mod. <!-- FIX: Insert a short description here. -->
 	<Blocks>
 		<!-- <Block path="SomeBlock.xml" /> -->
 		<Block path="TransmissionBlock.xml" />
+		<Block path="WheelBlock.xml" />
 	</Blocks>
 	
 	<!-- Any entities (level objects) your mod adds to the game.
@@ -122,8 +123,8 @@ A newly created mod. <!-- FIX: Insert a short description here. -->
 	<Resources>
 		<!-- <Mesh name="some-mesh-name" path="some_mesh_file.obj" /> -->
 		<!-- <Texture name="some-texture-name" path="some_texture_file.png" /> -->
-    <Mesh name ="main-obj" path ="cylinder.obj"/>
-    <Texture name="main-tex" path="cylinder.png"/>
+    <Mesh name ="main-obj" path ="TransmissionBlock\cylinder.obj"/>
+    <Texture name="main-tex" path="TransmissionBlock\cylinder.png"/>
    <Texture name="Icon" path="Icon.png"/>
 	</Resources>
 
