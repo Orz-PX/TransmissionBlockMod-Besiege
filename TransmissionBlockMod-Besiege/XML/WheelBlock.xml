@@ -146,9 +146,9 @@
 		<!-- TODO: Insert Collider definitions here.
 			 Examples: -->
 		<BoxCollider>
-			<Position x="0.0" y="0.0" z="0.25" />
+			<Position x="0.0" y="0.0" z="0.3" />
 			<Rotation x="0.0" y="0.0" z="0.0" />
-			<Scale x="1.0" y="1.0" z="0.5" />
+			<Scale x="0.75" y="0.75" z="0.5" />
 		</BoxCollider>
 		<!--<SphereCollider>
 			<Position x="0.0" y="0.0" z="0.0" />
@@ -164,7 +164,7 @@
 	<BasePoint hasAddingPoint="false">
 		<Stickiness enabled="true" radius="0.6" />
 		<!-- Can only have motion if sticky -->
-		<Motion x="false" y="true" z="false" /> <!-- Optional -->
+		<Motion x="false" y="false" z="false" /> <!-- Optional -->
 	</BasePoint>
 	
 	<AddingPoints>
