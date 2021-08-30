@@ -46,12 +46,12 @@ class WheelBlockScript : BlockScript
                                                 offect_forward
                                              );
 
-            addCollider(positions[i]);
+            addCollider(positions[i], 0f, 0.5f, 0.8f);
         }
 
         //addCollider(new Vector3(0f, -1f, 0.25f), 0f);
 
-        void addCollider(Vector3 localPosition)
+        void addCollider(Vector3 localPosition,float bounciness,float staticFriction,float dynamicFriction)
         {
             var go = new GameObject("box");
             go.transform.SetParent(boxs.transform);
@@ -67,6 +67,10 @@ class WheelBlockScript : BlockScript
             var mc = go.AddComponent<MeshCollider>() ?? go.GetComponent<MeshCollider>();
             mf.mesh = mc.sharedMesh = mesh;
             mc.convex = true;
+            mc.material.staticFriction = staticFriction;
+            mc.material.dynamicFriction = dynamicFriction;
+            mc.material.bounciness = bounciness;
+            mc.material.frictionCombine = PhysicMaterialCombine.Maximum;
 #if DEBUG
             var mr = go.AddComponent<MeshRenderer>() ?? go.GetComponent<MeshRenderer>();
             mr.material.color = Color.red;
