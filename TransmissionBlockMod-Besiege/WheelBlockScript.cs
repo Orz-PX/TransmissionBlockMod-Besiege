@@ -9,12 +9,23 @@ using UnityEngine;
 class WheelBlockScript : BlockScript
 {
 
+    MKey forwardKey, backwardKey;
+    MSlider speedSlider;
+
     static ModMesh mesh;
+    ConfigurableJoint CJ;
 
     public override void SafeAwake()
     {
+        forwardKey = AddKey("Forward", "Forward", KeyCode.UpArrow);
+        backwardKey = AddKey("Backward", "Backward", KeyCode.DownArrow);
+        speedSlider = AddSlider("Speed", "Speed", 1f, 0.1f, 3f);
+
+
         mesh = ModResource.GetMesh("wheel-obj");
-        Rigidbody.mass = 6f;
+        //Rigidbody.mass = 6f;
+
+        CJ = GetComponent<ConfigurableJoint>();
     }
 
     public override void OnBlockPlaced()
@@ -24,6 +35,41 @@ class WheelBlockScript : BlockScript
 
     }
 
+    public override void OnSimulateStart()
+    {
+
+        CJ.axis = Vector3.forward;
+        CJ.secondaryAxis = Vector3.up;
+        CJ.angularXMotion = ConfigurableJointMotion.Free;
+        //CJ.rotationDriveMode = RotationDriveMode.Slerp;
+
+        //var sd = CJ.slerpDrive;
+        //sd.maximumForce = 5000f;
+        //CJ.slerpDrive = sd;
+        var jd = CJ.angularXDrive;
+        jd.maximumForce = 5000f;
+        jd.positionDamper = 50f;
+        CJ.angularXDrive = jd;
+    }
+
+    public override void SimulateUpdateAlways()
+    {
+        base.SimulateUpdateAlways();
+        float input = 0f;
+        if (forwardKey.IsHeld)
+        {
+            input = 1f;
+        }
+
+        if (backwardKey.IsHeld)
+        {
+            input = -1f;
+        }
+
+
+        CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
+    }
+
     private void addColliders()
     {
         var boxs = new GameObject("Boxs");
@@ -31,7 +77,7 @@ class WheelBlockScript : BlockScript
         boxs.transform.position = transform.position;
         boxs.transform.rotation = transform.rotation;
 
-        var offect_forward = 0.25f;
+        var offect_forward = 0.5f;
         var origin = boxs.transform.localPosition + boxs.transform.forward * offect_forward;
         //圆半径、角度差和旋转角
         float radius = 1.45f, angle =24f;
@@ -110,7 +156,7 @@ class WheelBlockScript : BlockScript
                 var rigi = go.GetComponent<Rigidbody>();
                 rigi.useGravity = false;
                 rigi.mass = 0.35f;
-                rigi.angularDrag = rigi.drag = 0.05f;
+                rigi.angularDrag = rigi.drag = 0.01f * 0f;
                 rigi.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             }
         
