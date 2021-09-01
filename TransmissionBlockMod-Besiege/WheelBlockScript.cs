@@ -60,7 +60,7 @@ class WheelBlockScript : BlockScript
             CJ.angularXDrive = jd;
         }
 
-        Debug.Log(Vector3.Angle(CJ.anchor - CJ.connectedAnchor, transform.forward));
+        Debug.Log(Vector3.Angle(CJ.axis, transform.forward));
     
 
     }
@@ -88,11 +88,19 @@ class WheelBlockScript : BlockScript
         }
 
         CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
+
+        var go = transform.FindChild("Boxs");
+        var index = go.childCount;
+        for (int i = 0; i < index; i++)
+        {
+            go.GetChild(i).Rotate(Vector3.forward, 10f * Time.deltaTime);
+        }
+       Debug.Log(Vector3.Dot(transform.right, go.GetChild(0).transform.right) + "  " + Vector3.Angle(transform.forward, go.GetChild(0).transform.right));
     }
 
     private void SetCollidersState(bool enabled)
     {
-        Transform boxes = transform.FindChild("Boxes");
+        Transform boxes = transform.FindChild("Boxs");
         if (boxes == null) return;
         foreach (Transform child in boxes)
         {
@@ -105,7 +113,7 @@ class WheelBlockScript : BlockScript
 
     private void RefreshColliders()
     {
-        Transform boxes = transform.FindChild("Boxes");
+        Transform boxes = transform.FindChild("Boxs");
         if (boxes == null) return;
         foreach (Transform child in boxes)
         {
@@ -120,7 +128,7 @@ class WheelBlockScript : BlockScript
 
     private void AddColliders()
     {
-        var boxs = new GameObject("Boxes");
+        var boxs = new GameObject("Boxs");
         boxs.transform.SetParent(transform);
         boxs.transform.position = transform.position;
         boxs.transform.rotation = transform.rotation;
@@ -156,10 +164,29 @@ class WheelBlockScript : BlockScript
             go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
             //go.transform.LookAt(boxs.transform.position + boxs.transform.forward * localPosition.z);
             go.transform.LookAt(transform.TransformPoint (boxs.transform.localPosition + Vector3.forward * offect_forward));
-            Debug.Log(Vector3.Dot(transform.forward, go.transform.right) + "  "+ Vector3.Angle(transform.forward, go.transform.right));
-            //go.transform.RotateAround(go.transform.position, go.transform.forward, (-Mathf.Sign(Vector3.Dot(transform.forward, go.transform.right)) * Vector3.Angle(transform.forward, go.transform.right)));
-            go.transform.Rotate(Vector3.forward, Vector3.Angle(transform.forward, go.transform.right));
-            go.transform.Rotate(Vector3.forward, -Vector3.Angle(transform.forward, go.transform.right));
+            Debug.Log(Vector3.Dot(transform.up, go.transform.right) + "  "+ Vector3.Angle(transform.forward, go.transform.right));
+            //go.transform.RotateAround(go.transform.position, go.transform.forward, (-Mathf.Sign(Vector3.Dot(transform.right, go.transform.right)) * Vector3.Angle(transform.forward, go.transform.right)));
+            //go.transform.Rotate(Vector3.forward, Vector3.Angle(transform.forward, go.transform.right));
+            //go.transform.Rotate(Vector3.forward, -Vector3.Angle(transform.forward, go.transform.right));
+            var single = Vector3.Dot(Vector3.right, go.transform.right);
+            var _angle = Vector3.Angle(transform.forward, go.transform.right);
+            //if (single >= -0.5f && single <= 0.5f)
+            //{
+            //    if (_angle <= 45 || _angle >= 135)
+            //    {
+            //        go.transform.Rotate(Vector3.forward, - _angle);
+            //    }
+            //    else
+            //    {
+            //        go.transform.Rotate(Vector3.forward,- _angle);
+            //    }
+            //}
+            //else
+            //{
+            //    go.transform.Rotate(Vector3.forward, - Vector3.Angle(transform.forward, go.transform.right));
+            //}
+            go.transform.Rotate(Vector3.forward * Mathf.Sign(single), _angle);
+
 
             var mf = go.AddComponent<MeshFilter>() ?? go.GetComponent<MeshFilter>();
             var mc = go.AddComponent<MeshCollider>() ?? go.GetComponent<MeshCollider>();
@@ -174,7 +201,7 @@ class WheelBlockScript : BlockScript
             mr.material.color = Color.red;
 #endif
 
-            AddJoint(Vector3.forward * offect_forward, radius, springSlider.Value * 100f, damperSlider.Value * 10f, 500f);
+            //AddJoint(Vector3.forward * offect_forward, radius, springSlider.Value * 100f, damperSlider.Value * 10f, 500f);
 
             void AddJoint(Vector3 anchor, float _radius, float spring, float damper, float maxForce)
             {
