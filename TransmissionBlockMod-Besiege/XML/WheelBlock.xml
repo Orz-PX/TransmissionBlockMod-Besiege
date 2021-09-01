@@ -99,9 +99,9 @@
 	<!-- <DamageType>Blunt</DamageType> -->
 	
 	<Mesh name="main-obj"> <!-- Must be defined as a resource in the manifest. -->
-		<Position x="0.0" y="0.0" z="0.25" />
+		<Position x="0.0" y="0.0" z="0.5" />
 		<Rotation x="0.0" y="0.0" z="0.0" />
-		<Scale x="0.25" y="0.25" z="0.125" />
+		<Scale x="0.25" y="0.25" z="0.25" />
 	</Mesh>
 	
 	<Texture name="main-tex" /> <!-- Must be defined as a resource in the manifest. -->
@@ -115,7 +115,7 @@
 	<!-- Including this causes a direction arrow, like the one on wheels and other turnable blocks,
 		 to be displayed. The child elements define how and where it is displayed. -->
 	<Arrow>
-		<Position x="0" y="0" z="0.75" />
+		<Position x="0" y="0" z="1" />
 		<Rotation x="0" y="0" z="0" />
 		<Scale x="1" y="1" z="1" />
 	</Arrow>
@@ -146,9 +146,9 @@
 		<!-- TODO: Insert Collider definitions here.
 			 Examples: -->
 		<BoxCollider>
-			<Position x="0.0" y="0.0" z="0.3" />
+			<Position x="0.0" y="0.0" z="0.5" />
 			<Rotation x="0.0" y="0.0" z="0.0" />
-			<Scale x="0.75" y="0.75" z="0.5" />
+			<Scale x="0.75" y="0.75" z="0.9" />
 		</BoxCollider>
 		<!--<SphereCollider>
 			<Position x="0.0" y="0.0" z="0.0" />
@@ -175,10 +175,10 @@
 			<Stickiness enabled="true" radius="0.5"/>
 		</AddingPoint>-->
 
-		<AddingPoint>
+		<!--<AddingPoint>
 			<Position x="0.0" y="0.0" z="0.25" />
 			<Rotation x="0.0" y="0.0" z="0.0" />
 			<Stickiness enabled="false" radius="0.5"/>
-		</AddingPoint>
+		</AddingPoint>-->
 	</AddingPoints>
 </Block>
