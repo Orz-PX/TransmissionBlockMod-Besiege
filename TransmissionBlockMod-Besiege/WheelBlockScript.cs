@@ -10,7 +10,7 @@ class WheelBlockScript : BlockScript
 {
 
     MKey forwardKey, backwardKey;
-    MSlider speedSlider;
+    MSlider speedSlider, springSlider, damperSlider;
 
     static ModMesh mesh;
     ConfigurableJoint CJ;
@@ -20,10 +20,11 @@ class WheelBlockScript : BlockScript
         forwardKey = AddKey("Forward", "Forward", KeyCode.UpArrow);
         backwardKey = AddKey("Backward", "Backward", KeyCode.DownArrow);
         speedSlider = AddSlider("Speed", "Speed", 1f, 0.1f, 3f);
-
+        springSlider = AddSlider("Spring", "Spring", 1f, 0.1f, 50f);
+        damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
 
         mesh = ModResource.GetMesh("wheel-obj");
-        //Rigidbody.mass = 6f;
+        Rigidbody.mass = 0.5f;
 
         CJ = GetComponent<ConfigurableJoint>();
     }
@@ -31,13 +32,14 @@ class WheelBlockScript : BlockScript
     public override void OnBlockPlaced()
     {
         //addCollider(new Vector3(0f, -1f, 0.35f));
-        addColliders();
-
+        AddColliders();
+        SetCollidersState(false);
     }
 
     public override void OnSimulateStart()
     {
-
+        SetCollidersState(true);
+        RefreshColliders();
         CJ.axis = Vector3.forward;
         CJ.secondaryAxis = Vector3.up;
         CJ.angularXMotion = ConfigurableJointMotion.Free;
@@ -50,6 +52,12 @@ class WheelBlockScript : BlockScript
         jd.maximumForce = 5000f;
         jd.positionDamper = 50f;
         CJ.angularXDrive = jd;
+    }
+
+    public override void OnSimulateStop()
+    {
+        base.OnSimulateStop();
+        SetCollidersState(false);
     }
 
     public override void SimulateUpdateAlways()
@@ -65,22 +73,47 @@ class WheelBlockScript : BlockScript
         {
             input = -1f;
         }
-
-
         CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
     }
 
-    private void addColliders()
+    private void SetCollidersState(bool enabled)
     {
-        var boxs = new GameObject("Boxs");
-        boxs.transform.SetParent(transform);
-        boxs.transform.position = transform.position;
-        boxs.transform.rotation = transform.rotation;
+        Transform boxes = transform.FindChild("Boxes");
+        if (boxes == null) return;
+        foreach (Transform child in boxes)
+        {
+            var rb = child.gameObject.GetComponent<Rigidbody>();
+            if (rb == null) continue;
+            rb.detectCollisions = enabled;
+        }
+    }
+
+    private void RefreshColliders()
+    {
+        Transform boxes = transform.FindChild("Boxes");
+        if (boxes == null) return;
+        foreach (Transform child in boxes)
+        {
+            var cj = child.gameObject.GetComponent<ConfigurableJoint>();
+            if (cj == null) continue;
+            var jointDrive = cj.xDrive;
+            jointDrive.positionSpring = springSlider.Value * 100;
+            jointDrive.positionDamper = damperSlider.Value * 10;
+            cj.xDrive = jointDrive;
+        }
+    }
+
+    private void AddColliders()
+    {
+        var boxes = new GameObject("Boxes");
+        boxes.transform.SetParent(transform);
+        boxes.transform.position = transform.position;
+        boxes.transform.rotation = transform.rotation;
 
         var offect_forward = 0.5f;
-        var origin = boxs.transform.localPosition + boxs.transform.forward * offect_forward;
+        var origin = boxes.transform.localPosition + boxes.transform.forward * offect_forward;
         //圆半径、角度差和旋转角
-        float radius = 1.45f, angle =24f;
+        float radius = 1.45f, angle = 24f;
 
         var positions = new Vector3[30];
         //外圈box位置
@@ -92,22 +125,22 @@ class WheelBlockScript : BlockScript
                                                 offect_forward
                                              );
 
-            addCollider(positions[i], 0f, 0.5f, 0.8f);
+            AddCollider(positions[i], 0f, 0.5f, 0.8f);
         }
 
         //addCollider(new Vector3(0f, -1f, 0.25f), 0f);
 
-        void addCollider(Vector3 localPosition,float bounciness,float staticFriction,float dynamicFriction)
+        void AddCollider(Vector3 localPosition, float bounciness, float staticFriction, float dynamicFriction)
         {
             var go = new GameObject("box");
-            go.transform.SetParent(boxs.transform);
-            go.transform.position = boxs.transform.position;
-            go.transform.rotation = boxs.transform.rotation;
+            go.transform.SetParent(boxes.transform);
+            go.transform.position = boxes.transform.position;
+            go.transform.rotation = boxes.transform.rotation;
 
             go.transform.localPosition = localPosition;
             go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            go.transform.LookAt(boxs.transform.position + boxs.transform.forward * localPosition.z /*new Vector3(0f, 0f, locationPosition.z)*/);
-            go.transform.RotateAround(go.transform.position, go.transform.forward, (-Mathf.Sign( Vector3.Dot(transform.forward,go.transform.forward)) *Vector3.Angle(transform.forward, go.transform.right)));
+            go.transform.LookAt(boxes.transform.position + boxes.transform.forward * localPosition.z /*new Vector3(0f, 0f, locationPosition.z)*/);
+            go.transform.RotateAround(go.transform.position, go.transform.forward, (-Mathf.Sign(Vector3.Dot(transform.forward, go.transform.forward)) * Vector3.Angle(transform.forward, go.transform.right)));
 
             var mf = go.AddComponent<MeshFilter>() ?? go.GetComponent<MeshFilter>();
             var mc = go.AddComponent<MeshCollider>() ?? go.GetComponent<MeshCollider>();
@@ -122,9 +155,9 @@ class WheelBlockScript : BlockScript
             mr.material.color = Color.red;
 #endif
 
-            addJoint(Vector3.Scale(localPosition, Vector3.forward), radius, 5000f, 500f, 500f);
+            AddJoint(Vector3.Scale(localPosition, Vector3.forward), radius, springSlider.Value * 100, damperSlider.Value * 10, 500f);
 
-            void addJoint(Vector3 anchor, float _radius, float spring, float damper,float maxForce)
+            void AddJoint(Vector3 anchor, float _radius, float spring, float damper, float maxForce)
             {
                 var cj = go.AddComponent<ConfigurableJoint>();
                 cj.connectedBody = Rigidbody;
@@ -148,22 +181,22 @@ class WheelBlockScript : BlockScript
 
                 cj.targetPosition = new Vector3(_radius, 0f, 0f);
                 cj.enablePreprocessing = false;
-                cj.enableCollision =true;
+                cj.enableCollision = true;
                 cj.projectionMode = JointProjectionMode.PositionAndRotation;
                 cj.projectionDistance = 0f;
                 cj.projectionAngle = 1.5f;
 
-                var rigi = go.GetComponent<Rigidbody>();
-                rigi.useGravity = false;
-                rigi.mass = 0.35f;
-                rigi.angularDrag = rigi.drag = 0.01f * 0f;
-                rigi.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                var rb = go.GetComponent<Rigidbody>();
+                rb.useGravity = true;
+                rb.mass = 0.05f;
+                rb.angularDrag = rb.drag = 0.01f * 0f;
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             }
-        
+
         }
     }
 
-  
+
 
 }
 
