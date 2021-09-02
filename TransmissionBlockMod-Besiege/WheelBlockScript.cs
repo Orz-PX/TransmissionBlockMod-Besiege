@@ -12,8 +12,10 @@ class WheelBlockScript : BlockScript
     MKey forwardKey, backwardKey;
     MSlider speedSlider, springSlider, damperSlider;
 
+  
     static ModMesh mesh;
     ConfigurableJoint CJ;
+    float radius = 1.45f;
 
     public override void SafeAwake()
     {
@@ -33,8 +35,35 @@ class WheelBlockScript : BlockScript
     {
         AddColliders();
         SetCollidersState(false);
+    }
 
-        Debug.Log(transform.InverseTransformVector(transform.forward));
+    private Vector3 lastScale = Vector3.one;
+    private event Action<Vector3,Vector3> onScale;
+    public override void BuildingUpdate()
+    {
+        if (transform.localScale != lastScale)
+        {
+         
+            onScale?.Invoke(transform.localScale,lastScale);
+            setScale(transform.localScale,lastScale);
+
+            lastScale = transform.localScale;
+        }
+
+        void setScale(Vector3 currentScale, Vector3 lastScale)
+        {
+            var single = 0f;
+            if (currentScale.x != lastScale.x)
+            {
+                single = currentScale.x;
+            }
+            else if (currentScale.y != lastScale.y)
+            {
+                single = currentScale.y;
+            }
+            transform.localScale = new Vector3(single, single, currentScale.z);
+            setBoxesRadius(radius * single);
+        }
     }
 
     public override void OnSimulateStart()
@@ -58,9 +87,6 @@ class WheelBlockScript : BlockScript
             jd.positionDamper = 50f;
             CJ.angularXDrive = jd;
         }
-
-        Debug.Log(Vector3.Angle(CJ.axis, transform.forward));
-    
 
     }
 
@@ -88,18 +114,17 @@ class WheelBlockScript : BlockScript
 
         CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
 
-        var go = transform.FindChild("Boxs");
+        var go = transform.FindChild("Boxes");
         var index = go.childCount;
         for (int i = 0; i < index; i++)
         {
             go.GetChild(i).Rotate(Vector3.forward, 10f * Time.deltaTime);
         }
-       Debug.Log(Vector3.Dot(transform.right, go.GetChild(0).transform.right) + "  " + Vector3.Angle(transform.forward, go.GetChild(0).transform.right));
     }
 
     private void SetCollidersState(bool enabled)
     {
-        Transform boxes = transform.FindChild("Boxs");
+        Transform boxes = transform.FindChild("Boxes");
         if (boxes == null) return;
         foreach (Transform child in boxes)
         {
@@ -112,7 +137,7 @@ class WheelBlockScript : BlockScript
 
     private void RefreshColliders()
     {
-        Transform boxes = transform.FindChild("Boxs");
+        Transform boxes = transform.FindChild("Boxes");
         if (boxes == null) return;
         foreach (Transform child in boxes)
         {
@@ -125,17 +150,36 @@ class WheelBlockScript : BlockScript
         }
     }
 
+    private void setBoxesRadius(float radius)
+    {
+
+        var go = transform.FindChild("Boxes");
+        if (go == null) return;
+        var index = go.childCount;
+        for (int i = 0; i < index; i++)
+        {
+            var cj = go.GetChild(i).gameObject.GetComponent<ConfigurableJoint>();
+            if (cj == null) continue;
+
+            var softJointLimit = cj.linearLimit;
+            softJointLimit.limit = radius;
+            cj.linearLimit = softJointLimit;
+
+            cj.targetPosition = new Vector3(radius, 0f, 0f);
+        }
+    }
+
     private void AddColliders()
     {
-        var boxs = new GameObject("Boxs");
-        boxs.transform.SetParent(transform);
-        boxs.transform.position = transform.position;
-        boxs.transform.rotation = transform.rotation;
+        var Boxes = new GameObject("Boxes");
+        Boxes.transform.SetParent(transform);
+        Boxes.transform.position = transform.position;
+        Boxes.transform.rotation = transform.rotation;
 
         var offect_forward = 0.5f;
-        var origin = boxs.transform.localPosition;
+        var origin = Boxes.transform.localPosition;
         //圆半径和旋转角
-        float radius = 1.45f, angle = 24f;
+        float radius = this.radius, angle = 24f;
 
         var positions = new Vector3[30];
         //外圈box位置
@@ -153,13 +197,13 @@ class WheelBlockScript : BlockScript
         void AddCollider(Vector3 localPosition, float bounciness, float staticFriction, float dynamicFriction)
         {
             var go = new GameObject("box");
-            go.transform.SetParent(boxs.transform);
-            go.transform.position = boxs.transform.position;
-            go.transform.rotation = boxs.transform.rotation;
+            go.transform.SetParent(Boxes.transform);
+            go.transform.position = Boxes.transform.position;
+            go.transform.rotation = Boxes.transform.rotation;
 
             go.transform.localPosition = localPosition;
             go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            go.transform.LookAt(transform.TransformPoint (boxs.transform.localPosition + Vector3.forward * offect_forward));
+            go.transform.LookAt(transform.TransformPoint (Boxes.transform.localPosition + Vector3.forward * offect_forward));
 
             var single = Vector3.Dot(transform.forward, go.transform.up);
             var _angle = Vector3.Angle(transform.forward, go.transform.right);
