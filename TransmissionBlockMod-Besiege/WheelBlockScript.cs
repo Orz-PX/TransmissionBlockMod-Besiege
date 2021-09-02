@@ -16,7 +16,7 @@ class WheelBlockScript : BlockScript
     static ModMesh mesh;
     ConfigurableJoint CJ;
     float radius = 1.45f;
-
+    private Vector3 lastScale;
     public override void SafeAwake()
     {
         forwardKey = AddKey("Forward", "forward", KeyCode.UpArrow);
@@ -26,9 +26,13 @@ class WheelBlockScript : BlockScript
         damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
 
         mesh = ModResource.GetMesh("wheel-obj");
+        lastScale = transform.localScale;
+        radius *= lastScale.x;
         Rigidbody.mass = 0.5f;
+        
 
         CJ = GetComponent<ConfigurableJoint>();
+        CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
     }
 
     public override void OnBlockPlaced()
@@ -37,7 +41,7 @@ class WheelBlockScript : BlockScript
         SetCollidersState(false);
     }
 
-    private Vector3 lastScale = Vector3.one;
+
     private event Action<Vector3,Vector3> onScale;
     public override void BuildingUpdate()
     {
@@ -61,6 +65,10 @@ class WheelBlockScript : BlockScript
             {
                 single = currentScale.y;
             }
+            else
+            {
+                return;
+            }
             transform.localScale = new Vector3(single, single, currentScale.z);
             setBoxesRadius(radius * single);
         }
@@ -78,22 +86,18 @@ class WheelBlockScript : BlockScript
             CJ.axis = Vector3.forward;
             CJ.secondaryAxis = Vector3.up;
             CJ.angularXMotion = ConfigurableJointMotion.Free;
-            //CJ.autoConfigureConnectedAnchor = false;
-            //CJ.connectedAnchor = Vector3.forward * -0.5f;
-            //CJ.anchor = Vector3.zero;
+            //CJ.rotationDriveMode = RotationDriveMode.Slerp;
 
+            //var sd = CJ.slerpDrive;
+            //sd.maximumForce = 5000f;
+            //sd.positionDamper = 50f;
+            //CJ.slerpDrive = sd;
             var jd = CJ.angularXDrive;
             jd.maximumForce = 5000f;
             jd.positionDamper = 50f;
             CJ.angularXDrive = jd;
         }
 
-    }
-
-    public override void OnSimulateStop()
-    {
-        base.OnSimulateStop();
-        SetCollidersState(false);
     }
 
     public override void SimulateUpdateAlways()
@@ -113,13 +117,6 @@ class WheelBlockScript : BlockScript
         }
 
         CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
-
-        var go = transform.FindChild("Boxes");
-        var index = go.childCount;
-        for (int i = 0; i < index; i++)
-        {
-            go.GetChild(i).Rotate(Vector3.forward, 10f * Time.deltaTime);
-        }
     }
 
     private void SetCollidersState(bool enabled)
@@ -175,8 +172,9 @@ class WheelBlockScript : BlockScript
         Boxes.transform.SetParent(transform);
         Boxes.transform.position = transform.position;
         Boxes.transform.rotation = transform.rotation;
+        //Boxes.transform.localScale = transform.localScale;
 
-        var offect_forward = 0.5f;
+        var offect_forward = 0.5f ;
         var origin = Boxes.transform.localPosition;
         //圆半径和旋转角
         float radius = this.radius, angle = 24f;
@@ -188,11 +186,13 @@ class WheelBlockScript : BlockScript
             positions[i] = new Vector3(
                                                 origin.y + radius * Mathf.Sin(angle * i * Mathf.Deg2Rad),
                                                 origin.x - radius * Mathf.Cos(angle * i * Mathf.Deg2Rad),
-                                                offect_forward
+                                                offect_forward * transform.localScale.z
                                              );
 
             AddCollider(positions[i], 0f, 0.5f, 0.8f);
         }
+
+      
 
         void AddCollider(Vector3 localPosition, float bounciness, float staticFriction, float dynamicFriction)
         {
@@ -202,7 +202,7 @@ class WheelBlockScript : BlockScript
             go.transform.rotation = Boxes.transform.rotation;
 
             go.transform.localPosition = localPosition;
-            go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+           go.transform.localScale = Vector3.one * 0.1f * transform.localScale.x;
             go.transform.LookAt(transform.TransformPoint (Boxes.transform.localPosition + Vector3.forward * offect_forward));
 
             var single = Vector3.Dot(transform.forward, go.transform.up);
@@ -251,9 +251,10 @@ class WheelBlockScript : BlockScript
                 cj.projectionMode = JointProjectionMode.PositionAndRotation;
                 cj.projectionDistance = 0f;
                 cj.projectionAngle = 1.5f;
+                cj.breakForce = cj.breakTorque = 18000f;
 
                 var rb = go.GetComponent<Rigidbody>();
-                rb.useGravity = true;
+                rb.useGravity = false;
                 rb.mass = 0.35f;
                 rb.angularDrag = rb.drag = 0.01f * 0f;
                 rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
