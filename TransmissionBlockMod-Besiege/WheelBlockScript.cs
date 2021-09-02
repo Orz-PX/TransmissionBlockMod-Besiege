@@ -31,7 +31,6 @@ class WheelBlockScript : BlockScript
 
     public override void OnBlockPlaced()
     {
-        //addCollider(new Vector3(0f, -1f, 0.35f));
         AddColliders();
         SetCollidersState(false);
 
@@ -134,7 +133,7 @@ class WheelBlockScript : BlockScript
         boxs.transform.rotation = transform.rotation;
 
         var offect_forward = 0.5f;
-        var origin = boxs.transform.localPosition/* + boxes.transform.forward * offect_forward*/;
+        var origin = boxs.transform.localPosition;
         //圆半径和旋转角
         float radius = 1.45f, angle = 24f;
 
@@ -151,8 +150,6 @@ class WheelBlockScript : BlockScript
             AddCollider(positions[i], 0f, 0.5f, 0.8f);
         }
 
-        //addCollider(new Vector3(0f, -1f, 0.25f), 0f);
-
         void AddCollider(Vector3 localPosition, float bounciness, float staticFriction, float dynamicFriction)
         {
             var go = new GameObject("box");
@@ -162,31 +159,11 @@ class WheelBlockScript : BlockScript
 
             go.transform.localPosition = localPosition;
             go.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            //go.transform.LookAt(boxs.transform.position + boxs.transform.forward * localPosition.z);
             go.transform.LookAt(transform.TransformPoint (boxs.transform.localPosition + Vector3.forward * offect_forward));
-            Debug.Log(Vector3.Dot(transform.up, go.transform.right) + "  "+ Vector3.Angle(transform.forward, go.transform.right));
-            //go.transform.RotateAround(go.transform.position, go.transform.forward, (-Mathf.Sign(Vector3.Dot(transform.right, go.transform.right)) * Vector3.Angle(transform.forward, go.transform.right)));
-            //go.transform.Rotate(Vector3.forward, Vector3.Angle(transform.forward, go.transform.right));
-            //go.transform.Rotate(Vector3.forward, -Vector3.Angle(transform.forward, go.transform.right));
-            var single = Vector3.Dot(Vector3.right, go.transform.right);
-            var _angle = Vector3.Angle(transform.forward, go.transform.right);
-            //if (single >= -0.5f && single <= 0.5f)
-            //{
-            //    if (_angle <= 45 || _angle >= 135)
-            //    {
-            //        go.transform.Rotate(Vector3.forward, - _angle);
-            //    }
-            //    else
-            //    {
-            //        go.transform.Rotate(Vector3.forward,- _angle);
-            //    }
-            //}
-            //else
-            //{
-            //    go.transform.Rotate(Vector3.forward, - Vector3.Angle(transform.forward, go.transform.right));
-            //}
-            go.transform.Rotate(Vector3.forward * Mathf.Sign(single), _angle);
 
+            var single = Vector3.Dot(transform.forward, go.transform.up);
+            var _angle = Vector3.Angle(transform.forward, go.transform.right);
+            go.transform.Rotate(Vector3.forward * Mathf.Sign(single), _angle);
 
             var mf = go.AddComponent<MeshFilter>() ?? go.GetComponent<MeshFilter>();
             var mc = go.AddComponent<MeshCollider>() ?? go.GetComponent<MeshCollider>();
@@ -201,7 +178,7 @@ class WheelBlockScript : BlockScript
             mr.material.color = Color.red;
 #endif
 
-            //AddJoint(Vector3.forward * offect_forward, radius, springSlider.Value * 100f, damperSlider.Value * 10f, 500f);
+            AddJoint(Vector3.forward * offect_forward, radius, springSlider.Value * 100f, damperSlider.Value * 10f, 500f);
 
             void AddJoint(Vector3 anchor, float _radius, float spring, float damper, float maxForce)
             {
@@ -209,10 +186,9 @@ class WheelBlockScript : BlockScript
                 cj.connectedBody = Rigidbody;
                 cj.autoConfigureConnectedAnchor = false;
 
-                //var anchor = new Vector3(0f, 0f, /*go.transform.*/localPosition.z/* * 0.5f*/);
                 cj.connectedAnchor = anchor;
                 cj.anchor = Vector3.zero;
-                cj.axis = /*Vector3.Scale(Vector3.Normalize(boxs.transform.position - go.transform.position), new Vector3(1f, 1f, 0f));*/Vector3.forward;
+                cj.axis = Vector3.forward;
                 cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
                 cj.xMotion = ConfigurableJointMotion.Limited;
                 var softJointLimit = cj.linearLimit;
