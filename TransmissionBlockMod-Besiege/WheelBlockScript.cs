@@ -41,7 +41,6 @@ class WheelBlockScript : BlockScript
         }
     }
 
-
     private event Action<Vector3,Vector3> onScale;
     public override void BuildingUpdate()
     {
@@ -113,6 +112,8 @@ class WheelBlockScript : BlockScript
         }
 
         CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
+
+        Boxes.refreshVertices();
     }
 }
 class Boxes
@@ -120,6 +121,9 @@ class Boxes
     public GameObject gameObject;
     public Box[] boxes;
     public float Radius { get; set; } = 1.45f;
+
+    private MeshFilter meshFilter;
+    private MeshRenderer meshRenderer;
     public Boxes(Transform parent, Rigidbody connectedBody)
     {
         gameObject = new GameObject("Boxes");
@@ -149,15 +153,6 @@ class Boxes
             boxes[i] = new Box(gameObject.transform, position, anchor, connectedBody, Radius);
         }
 
-        //for (var i = 0; i < index; i++)
-        //{
-        //    var x = (i + 1 >= index ? 0 : i + 1);
-
-        //    // boxes[i].secondObject.ConnectedBody = boxes[x].rigidbody;
-        //    Physics.IgnoreCollision(boxes[i].meshCollider, boxes[x].meshCollider);
-
-        //}
-
         for (var i = 0; i < index; i++)
         {
             for (var j = 0; j < index; j++)
@@ -166,6 +161,9 @@ class Boxes
             }
         }
 
+        meshFilter = gameObject.AddComponent<MeshFilter>();
+        meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        meshRenderer.material.color = Color.green;
     }
     public void SetRadius(float radius)
     {
@@ -191,6 +189,33 @@ class Boxes
         {
             box.SetJointDrive(spring, damper, maximumForce);
         }
+    }
+    public Vector3[] GetAllVertices()
+    {
+        var index = boxes.Length;
+        var vectors = new Vector3[index*2];
+
+        var j = 0;
+        for (var i = 0; i < index; i++)
+        {
+            vectors[j++] = gameObject.transform.parent.TransformPoint(boxes[i].GetVertices()[0]);
+            vectors[j++] = gameObject.transform.parent.TransformPoint(boxes[i].GetVertices()[1]);
+        }
+        return vectors;
+    }
+    public void refreshVertices()
+    {
+        meshFilter.mesh.vertices = GetAllVertices();
+        var index = GetAllVertices().Length;
+        var uvs = new Vector2[index];
+        var tris = new int[index];
+        for (var i = 0; i<index; i++)
+        {
+            uvs[i] = new Vector2(1.0f * i / index, 1);
+            tris[i] = i;
+        }
+        meshFilter.mesh.uv = uvs;
+        meshFilter.mesh.triangles = tris;
     }
 }
 
@@ -296,5 +321,15 @@ class Box
         rb.angularDrag =angularDrag;
         rb.collisionDetectionMode = collisionDetectionMode;
     }
+    public Vector3[] GetVertices()
+    {
+        var vertices = new Vector3[2] { Vector3.zero, Vector3.zero };
+        var offect = 0.5f;
+        var direction = Vector3.forward;
 
+        vertices[0] = gameObject.transform.localPosition + direction * offect;
+        vertices[1] = gameObject.transform.localPosition - direction * offect;
+        return vertices;
+    }
 }
+
