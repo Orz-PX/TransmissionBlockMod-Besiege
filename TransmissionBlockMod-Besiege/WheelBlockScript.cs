@@ -78,7 +78,7 @@ class WheelBlockScript : BlockScript
     {
         Destroy(transform.FindChild("Boxes").gameObject);
         Boxes = new Boxes(transform,Rigidbody);
-        Boxes.RefreshBoxesCollider(springSlider.Value * 200f, damperSlider.Value * 50f, 500f);
+        Boxes.RefreshBoxesCollider(springSlider.Value * 400f, damperSlider.Value * 50f, 1000f);
 
         addDynamicAxis();
 
@@ -133,7 +133,7 @@ class Boxes
         var anchor = Vector3.forward * offect_forward;
         //圆半径和旋转角
         float radius = Radius / gameObject.transform.localScale.x;
-        float angle = 24f;
+        float angle = /*24f*/20f;
         int index = (int)(360f / angle);
 
         boxes = new Box[index];
@@ -149,13 +149,23 @@ class Boxes
             boxes[i] = new Box(gameObject.transform, position, anchor, connectedBody, Radius);
         }
 
+        //for (var i = 0; i < index; i++)
+        //{
+        //    var x = (i + 1 >= index ? 0 : i + 1);
+
+        //    // boxes[i].secondObject.ConnectedBody = boxes[x].rigidbody;
+        //    Physics.IgnoreCollision(boxes[i].meshCollider, boxes[x].meshCollider);
+
+        //}
+
         for (var i = 0; i < index; i++)
         {
-
-            var j = (i + 1 >= index ? 0 : i + 1);
-
-            boxes[i].secondObject.ConnectedBody = boxes[j].rigidbody;
+            for (var j = 0; j < index; j++)
+            { 
+            Physics.IgnoreCollision(boxes[i].meshCollider, boxes[j].meshCollider);
+            }
         }
+
     }
     public void SetRadius(float radius)
     {
@@ -187,11 +197,11 @@ class Boxes
 class Box
 {
     public GameObject gameObject;
-    public SecondObject secondObject;
+   // public SecondObject secondObject;
     private ConfigurableJoint configurableJoint;
 
     private static ModMesh mesh;
-    private MeshCollider meshCollider;
+    public MeshCollider meshCollider;
     public Rigidbody rigidbody { get { return gameObject.GetComponent<Rigidbody>(); } }
     public float Radius { get; set; } 
     public Box(Transform parent, Vector3 localPosition, Vector3 connectedAnchor,Rigidbody connectedBody,float radius)
@@ -226,7 +236,7 @@ class Box
         SetJointAttribute();
         SetBodyAttribute();
 
-        secondObject = new SecondObject(gameObject.transform);
+        //secondObject = new SecondObject(gameObject.transform);
     }
 
     private void addJoint(Vector3 anchor , Rigidbody connectedBody)
@@ -255,7 +265,7 @@ class Box
         configurableJoint.targetPosition = new Vector3(_radius, 0f, 0f);
     }
 
-    public void SetJointDrive(float spring = 200f, float damper = 50f, float maximumForce = 500f)
+    public void SetJointDrive(float spring = 400f, float damper = 50f, float maximumForce = 500f)
     {
         var jointDrive = configurableJoint.xDrive;
         jointDrive.positionSpring = spring;
@@ -263,7 +273,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = 36000f,float breakTorque = 36000f,bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0f,float projectionAngle = 1.5f)
+    public void SetJointAttribute(float breakForce = 36000f,float breakTorque = 36000f,bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0f,float projectionAngle = 2f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -282,7 +292,7 @@ class Box
         mc.material.dynamicFriction = dynamicFriction;
         mc.material.frictionCombine = frictionCombine;
     }
-    public void SetBodyAttribute(bool useGravity = true, float mass = 0.35f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic)
+    public void SetBodyAttribute(bool useGravity = true, float mass = 0.35f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
     {
         var rb = gameObject.GetComponent<Rigidbody>();
         rb.useGravity = useGravity;
@@ -306,7 +316,11 @@ class Box
             gameObject.transform.rotation = parent.rotation;
 
             ConfigurableJoint = gameObject.AddComponent<ConfigurableJoint>();
+            //ConfigurableJoint.enablePreprocessing = false;
             ConfigurableJoint.enableCollision = false;
+
+            var rb = gameObject.GetComponent<Rigidbody>();
+            rb.isKinematic = true;
         }
     }
 }

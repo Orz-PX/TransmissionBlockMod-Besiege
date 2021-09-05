@@ -53,13 +53,9 @@
     <Compile Include="TransmissionBlockScript.cs" />
     <Compile Include="WheelBlockScript.cs" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Resources\WheelBlock\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Resources\cylinder.png" />
     <Content Include="Resources\Icon.png" />
-    <Content Include="Resources\pngElectricalPin.png" />
     <Content Include="Resources\TransmissionBlock\cylinder.png" />
     <Content Include="Resources\TransmissionBlock\pngElectricalPin.png" />
     <Content Include="XML\Mod.xml" />
@@ -69,10 +65,9 @@
     <Content Include="XML\WheelBlock.xml" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\cylinder.obj" />
-    <None Include="Resources\ElectricalPin.obj" />
     <None Include="Resources\TransmissionBlock\cylinder.obj" />
     <None Include="Resources\TransmissionBlock\ElectricalPin.obj" />
+    <None Include="Resources\WheelBlock\_model1.obj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
