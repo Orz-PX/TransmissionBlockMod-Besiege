@@ -273,7 +273,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = 36000f,float breakTorque = 36000f,bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0f,float projectionAngle = 2f)
+    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0f,float projectionAngle = 5f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
