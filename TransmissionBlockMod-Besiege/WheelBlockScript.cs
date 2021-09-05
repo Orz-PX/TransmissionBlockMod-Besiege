@@ -297,6 +297,14 @@ class Boxes
 
             boxes[i] = new Box(gameObject.transform, position, anchor, connectedBody, Radius);
         }
+
+        for (var i = 0; i < index; i++)
+        {
+
+            var j = (i + 1 >= index ? 0 : i + 1);
+
+            boxes[i].secondObject.ConnectedBody = boxes[j].rigidbody;
+        }
     }
     public void SetRadius(float radius)
     {
@@ -328,6 +336,7 @@ class Boxes
 class Box
 {
     public GameObject gameObject;
+    public SecondObject secondObject;
     private ConfigurableJoint configurableJoint;
 
     private static ModMesh mesh;
@@ -365,6 +374,8 @@ class Box
         SetJointDrive();
         SetJointAttribute();
         SetBodyAttribute();
+
+        secondObject = new SecondObject(gameObject.transform);
     }
 
     private void addJoint(Vector3 anchor , Rigidbody connectedBody)
@@ -428,5 +439,23 @@ class Box
         rb.drag = drag;
         rb.angularDrag =angularDrag;
         rb.collisionDetectionMode = collisionDetectionMode;
+    }
+
+    public class SecondObject
+    {
+        public GameObject gameObject;
+        public ConfigurableJoint ConfigurableJoint;
+
+        public Rigidbody ConnectedBody { get { return ConfigurableJoint.connectedBody; } set { ConfigurableJoint.connectedBody = value; } }
+        public SecondObject(Transform parent)
+        {
+            gameObject = new GameObject("SecondObject");
+            gameObject.transform.SetParent(parent);
+            gameObject.transform.position = parent.position;
+            gameObject.transform.rotation = parent.rotation;
+
+            ConfigurableJoint = gameObject.AddComponent<ConfigurableJoint>();
+            ConfigurableJoint.enableCollision = false;
+        }
     }
 }
