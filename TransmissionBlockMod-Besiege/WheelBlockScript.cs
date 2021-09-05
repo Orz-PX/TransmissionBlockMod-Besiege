@@ -197,7 +197,6 @@ class Boxes
 class Box
 {
     public GameObject gameObject;
-   // public SecondObject secondObject;
     private ConfigurableJoint configurableJoint;
 
     private static ModMesh mesh;
@@ -235,8 +234,6 @@ class Box
         SetJointDrive();
         SetJointAttribute();
         SetBodyAttribute();
-
-        //secondObject = new SecondObject(gameObject.transform);
     }
 
     private void addJoint(Vector3 anchor , Rigidbody connectedBody)
@@ -249,8 +246,6 @@ class Box
         cj.axis = Vector3.forward;
         cj.xMotion = ConfigurableJointMotion.Limited;
         cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
-
-        //rigidbody = gameObject.GetComponent<Rigidbody>();
     }
 
     public void SetRadius(float radius)
@@ -273,7 +268,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0f,float projectionAngle = 5f)
+    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.05f,float projectionAngle = 5f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -302,25 +297,4 @@ class Box
         rb.collisionDetectionMode = collisionDetectionMode;
     }
 
-    public class SecondObject
-    {
-        public GameObject gameObject;
-        public ConfigurableJoint ConfigurableJoint;
-
-        public Rigidbody ConnectedBody { get { return ConfigurableJoint.connectedBody; } set { ConfigurableJoint.connectedBody = value; } }
-        public SecondObject(Transform parent)
-        {
-            gameObject = new GameObject("SecondObject");
-            gameObject.transform.SetParent(parent);
-            gameObject.transform.position = parent.position;
-            gameObject.transform.rotation = parent.rotation;
-
-            ConfigurableJoint = gameObject.AddComponent<ConfigurableJoint>();
-            //ConfigurableJoint.enablePreprocessing = false;
-            ConfigurableJoint.enableCollision = false;
-
-            var rb = gameObject.GetComponent<Rigidbody>();
-            rb.isKinematic = true;
-        }
-    }
 }
