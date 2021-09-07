@@ -84,7 +84,7 @@ class WheelBlockScript : BlockScript
         void addDynamicAxis()
         {
             CJ.axis = Vector3.forward;
-            CJ.secondaryAxis = Vector3.up;
+            CJ.secondaryAxis = Vector3.right;
             CJ.angularXMotion = ConfigurableJointMotion.Free;
 
             var jd = CJ.angularXDrive;
@@ -113,7 +113,11 @@ class WheelBlockScript : BlockScript
 
         CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
 
-        Boxes.refreshVertices();
+        //Boxes.refreshVertices();
+        if (forwardKey.IsPressed)
+        {
+            Debug.Log(Vector3.Dot( transform.TransformVector( Boxes.boxes[0].gameObject.transform.right),transform.right) );
+        }
     }
 }
 class Boxes
@@ -137,7 +141,7 @@ class Boxes
         var anchor = Vector3.forward * offect_forward;
         //圆半径和旋转角
         float radius = Radius / gameObject.transform.localScale.x;
-        float angle = /*24f*/20f;
+        float angle = 18f;
         int index = (int)(360f / angle);
 
         boxes = new Box[index];
