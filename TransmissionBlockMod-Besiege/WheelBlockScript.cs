@@ -87,6 +87,9 @@ class WheelBlockScript : BlockScript
             CJ.secondaryAxis = Vector3.right;
             CJ.angularXMotion = ConfigurableJointMotion.Free;
 
+            var startRotation = transform.localRotation;
+            CJ.SetTargetRotationLocal(Quaternion.Euler(0, 90, 0), startRotation);
+
             var jd = CJ.angularXDrive;
             jd.maximumForce = 5000f;
             jd.positionDamper = 50f;
