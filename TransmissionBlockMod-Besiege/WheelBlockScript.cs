@@ -34,11 +34,11 @@ class WheelBlockScript : BlockScript
 
     public override void OnBlockPlaced()
     {
-        if (!transform.FindChild("Boxes"))
-        {
-            Boxes = new Boxes(transform, Rigidbody);
-            Boxes.SetBoxesColliderState(false);
-        }
+        //if (!transform.FindChild("Boxes"))
+        //{
+        //    Boxes = new Boxes(transform, Rigidbody);
+        //    Boxes.SetBoxesColliderState(false);
+        //}
     }
 
     private event Action<Vector3,Vector3> onScale;
@@ -75,32 +75,39 @@ class WheelBlockScript : BlockScript
 
     public override void OnSimulateStart()
     {
-        Destroy(transform.FindChild("Boxes").gameObject);
+        Destroy(transform.FindChild("Boxes")?.gameObject);
         Boxes = new Boxes(transform,Rigidbody);
         Boxes.RefreshBoxesCollider(springSlider.Value * 400f, damperSlider.Value * 50f, 1000f);
+        StartCoroutine(ignore());
 
         addDynamicAxis();
 
         void addDynamicAxis()
         {
             CJ.axis = Vector3.forward;
-            CJ.secondaryAxis = Vector3.right;
+            CJ.secondaryAxis = Vector3.up;
             CJ.angularXMotion = ConfigurableJointMotion.Free;
 
-            var startRotation = transform.localRotation;
-            CJ.SetTargetRotationLocal(Quaternion.Euler(0, 90, 0), startRotation);
+            //var startRotation = transform.localRotation;
+            //CJ.SetTargetRotationLocal(Quaternion.Euler(0, 90, 0), startRotation);
 
             var jd = CJ.angularXDrive;
             jd.maximumForce = 5000f;
             jd.positionDamper = 50f;
             CJ.angularXDrive = jd;
+
         }
 
+        IEnumerator ignore()
+        {
+            yield return new WaitUntil(() => CJ.connectedBody != null);
+            Boxes.IgnorBaseBlockCollider();
+        }
     }
 
     public override void SimulateUpdateAlways()
     {
-
+     
         float input = 0f;
         if (forwardKey.IsHeld)
         {
@@ -114,13 +121,13 @@ class WheelBlockScript : BlockScript
             Rigidbody.WakeUp();
         }
 
-        CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
+        CJ.targetAngularVelocity = Vector3 .right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
 
         //Boxes.refreshVertices();
-        if (forwardKey.IsPressed)
-        {
-            Debug.Log(Vector3.Dot( transform.TransformVector( Boxes.boxes[0].gameObject.transform.right),transform.right) );
-        }
+        //if (forwardKey.IsPressed)
+        //{
+        //    Debug.Log(Vector3.Dot( transform.TransformVector( Boxes.boxes[0].gameObject.transform.right),transform.right) );
+        //}
     }
 }
 class Boxes
@@ -131,8 +138,13 @@ class Boxes
 
     private MeshFilter meshFilter;
     private MeshRenderer meshRenderer;
+    private Transform parent;
+    private Rigidbody connectedBody;
     public Boxes(Transform parent, Rigidbody connectedBody)
     {
+        this.parent = parent;
+        this.connectedBody = connectedBody;
+
         gameObject = new GameObject("Boxes");
         gameObject.transform.SetParent(parent);
         gameObject.transform.position = parent.position;
@@ -205,8 +217,8 @@ class Boxes
         var j = 0;
         for (var i = 0; i < index; i++)
         {
-            vectors[j++] = gameObject.transform.parent.TransformPoint(boxes[i].GetVertices()[0]);
-            vectors[j++] = gameObject.transform.parent.TransformPoint(boxes[i].GetVertices()[1]);
+            vectors[j++] = gameObject.transform./*parent.*/TransformPoint(boxes[i].GetVertices()[0]);
+            vectors[j++] = gameObject.transform./*parent.*/TransformPoint(boxes[i].GetVertices()[1]);
         }
         return vectors;
     }
@@ -215,14 +227,43 @@ class Boxes
         meshFilter.mesh.vertices = GetAllVertices();
         var index = GetAllVertices().Length;
         var uvs = new Vector2[index];
-        var tris = new int[index];
+        var tris = new int[(index-2) * 3];
+        var j = 0;
         for (var i = 0; i<index; i++)
         {
             uvs[i] = new Vector2(1.0f * i / index, 1);
-            tris[i] = i;
+            if (j < tris.Length)
+            {
+                if (i % 2 != 0)
+                {
+                    tris[j++] = i;
+                    tris[j++] = i + 1;
+                    tris[j++] = i + 2 > index ? 0 : i + 2;
+                }
+                else
+                {
+                    tris[j++] = i + 2 > index ? i - 8 : i + 2;
+                    tris[j++] = i + 1 > index ? 0 : i + 1;
+                    tris[j++] = i;
+                }
+            }
         }
+   
         meshFilter.mesh.uv = uvs;
         meshFilter.mesh.triangles = tris;
+        meshFilter.mesh.RecalculateBounds();
+        meshFilter.mesh.RecalculateNormals();
+    }
+
+    public void IgnorBaseBlockCollider()
+    {
+        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>().connectedBody?.gameObject.GetComponentsInChildren<Collider>())
+        {
+            foreach (var box in boxes)
+            {
+                Physics.IgnoreCollision(box.meshCollider, col);
+            }
+        }
     }
 }
 
@@ -300,7 +341,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.05f,float projectionAngle = 5f)
+    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.01f,float projectionAngle = 5f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -319,7 +360,7 @@ class Box
         mc.material.dynamicFriction = dynamicFriction;
         mc.material.frictionCombine = frictionCombine;
     }
-    public void SetBodyAttribute(bool useGravity = true, float mass = 0.35f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
+    public void SetBodyAttribute(bool useGravity = true, float mass = 0.15f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
     {
         var rb = gameObject.GetComponent<Rigidbody>();
         rb.useGravity = useGravity;
@@ -331,11 +372,12 @@ class Box
     public Vector3[] GetVertices()
     {
         var vertices = new Vector3[2] { Vector3.zero, Vector3.zero };
-        var offect = 0.5f;
-        var direction = Vector3.forward;
+        var offect = 1f;
+        var direction = gameObject.transform.right;
 
-        vertices[0] = gameObject.transform.localPosition + direction * offect;
-        vertices[1] = gameObject.transform.localPosition - direction * offect;
+        var position = gameObject.transform.localPosition;
+        vertices[0] = position + direction * offect;
+        vertices[1] = position - direction * offect;
         return vertices;
     }
 }
