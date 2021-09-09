@@ -84,17 +84,17 @@ class WheelBlockScript : BlockScript
 
         void addDynamicAxis()
         {
-            CJ.axis = Vector3.forward;
-            CJ.secondaryAxis = Vector3.up;
-            CJ.angularXMotion = ConfigurableJointMotion.Free;
+            //CJ.axis = Vector3.forward;
+            //CJ.secondaryAxis = Vector3.up;
+            //CJ.angularXMotion = ConfigurableJointMotion.Free;
 
-            //var startRotation = transform.localRotation;
-            //CJ.SetTargetRotationLocal(Quaternion.Euler(0, 90, 0), startRotation);
+            ////var startRotation = transform.localRotation;
+            ////CJ.SetTargetRotationLocal(Quaternion.Euler(0, 90, 0), startRotation);
 
-            var jd = CJ.angularXDrive;
-            jd.maximumForce = 5000f;
-            jd.positionDamper = 50f;
-            CJ.angularXDrive = jd;
+            //var jd = CJ.angularXDrive;
+            //jd.maximumForce = 5000f;
+            //jd.positionDamper = 50f;
+            //CJ.angularXDrive = jd;
 
         }
 
@@ -104,24 +104,43 @@ class WheelBlockScript : BlockScript
             Boxes.IgnorBaseBlockCollider();
         }
     }
-
+    float input = 0f,lastInput = 0f;
     public override void SimulateUpdateAlways()
     {
-     
-        float input = 0f;
-        if (forwardKey.IsHeld)
+
+
+        if (forwardKey.IsPressed)
         {
-            input = 1f;
+            input += 1f;
             Rigidbody.WakeUp();
         }
-
-        if (backwardKey.IsHeld)
+        else if (forwardKey.IsReleased)
         {
-            input = -1f;
-            Rigidbody.WakeUp();
+            input -= 1f;
         }
 
-        CJ.targetAngularVelocity = Vector3 .right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
+        if (backwardKey.IsPressed)
+        {
+            input += -1f;
+            Rigidbody.WakeUp();
+        }
+        else if (backwardKey.IsReleased)
+        {
+            input -= -1f;
+        }
+
+        if (input != lastInput)
+        {
+            var jm = Boxes.HingeJoint.motor;
+            jm.targetVelocity = (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 200f;
+            Boxes.HingeJoint.motor = jm;
+
+            lastInput = input;
+        }
+
+
+        //Boxes.gameObject.transform.Rotate(input * (Flipped ? -1f : 1f) * Vector3.forward, 20f * Time.deltaTime);
+        //CJ.targetAngularVelocity = Vector3 .right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
 
         //Boxes.refreshVertices();
         //if (forwardKey.IsPressed)
@@ -133,6 +152,7 @@ class WheelBlockScript : BlockScript
 class Boxes
 {
     public GameObject gameObject;
+    public HingeJoint HingeJoint;
     public Box[] boxes;
     public float Radius { get; set; } = 1.45f;
 
@@ -151,9 +171,28 @@ class Boxes
         gameObject.transform.rotation = parent.rotation;
         gameObject.transform.localScale = parent.localScale;
 
+        var cj= gameObject.AddComponent<HingeJoint>();
+        HingeJoint = cj;
+        cj.autoConfigureConnectedAnchor = false;
+        cj.connectedAnchor = Vector3.zero;
+        cj.connectedBody = connectedBody;
+        cj.axis = Vector3.forward;
+        cj.enableCollision = false;
+        cj.enablePreprocessing = false;
+        cj.useMotor = true;
+        var jm = cj.motor;
+        jm.force = 5000f;
+        jm.freeSpin = true;
+        //jm.targetVelocity = 500f;
+        cj.motor = jm;
+        var rigi = gameObject.GetComponent<Rigidbody>();
+        rigi.centerOfMass = Vector3.zero;
+        rigi.maxAngularVelocity = 300f;
+       
+
         var offect_forward = 0.5f;
         var origin = gameObject.transform.localPosition;
-        var anchor = Vector3.forward * offect_forward;
+        var anchor = Vector3.forward * offect_forward/* / gameObject.transform.localScale.z*/;
         //圆半径和旋转角
         float radius = Radius / gameObject.transform.localScale.x;
         float angle = 18f;
@@ -169,7 +208,7 @@ class Boxes
                                                 offect_forward / gameObject.transform.localScale.z
                                              );
 
-            boxes[i] = new Box(gameObject.transform, position, anchor, connectedBody, Radius);
+            boxes[i] = new Box(gameObject.transform, position, anchor, gameObject.GetComponent<Rigidbody>(), Radius);
         }
 
         for (var i = 0; i < index; i++)
@@ -183,6 +222,10 @@ class Boxes
         meshFilter = gameObject.AddComponent<MeshFilter>();
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
         meshRenderer.material.color = Color.green;
+
+        //var cj = gameObject.AddComponent<HingeJoint>();
+        //cj.connectedBody = connectedBody;
+       
     }
     public void SetRadius(float radius)
     {
@@ -314,7 +357,7 @@ class Box
         var cj = configurableJoint = gameObject.AddComponent<ConfigurableJoint>();
         cj.autoConfigureConnectedAnchor = false;
         cj.connectedBody =connectedBody;
-        cj.connectedAnchor = anchor;
+        cj.connectedAnchor = anchor / gameObject.transform.parent.localScale.z;
         cj.anchor = Vector3.zero;
         cj.axis = Vector3.forward;
         cj.xMotion = ConfigurableJointMotion.Limited;
