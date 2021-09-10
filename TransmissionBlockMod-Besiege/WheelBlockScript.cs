@@ -140,7 +140,7 @@ class WheelBlockScript : BlockScript
 
 
         //Boxes.gameObject.transform.Rotate(input * (Flipped ? -1f : 1f) * Vector3.forward, 20f * Time.deltaTime);
-        CJ.targetAngularVelocity = Mathf.Sign(transform.localRotation.eulerAngles.) * Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
+        CJ.targetAngularVelocity = /*Mathf.Sign(transform.localRotation.eulerAngles.) **/ Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
 
         //Boxes.refreshVertices();
         //if (forwardKey.IsPressed)
@@ -363,7 +363,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.01f,float projectionAngle = 5f)
+    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.01f,float projectionAngle = 180f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
