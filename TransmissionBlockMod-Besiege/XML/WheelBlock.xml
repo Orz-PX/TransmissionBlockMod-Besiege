@@ -59,15 +59,35 @@
 	
 	<!-- <Script>Full Name of a BlockScript class, optional.</Script> -->
 	<Script>WheelBlockScript</Script>
-	
+
+	<ModuleMapperTypes>
+		<Key displayName="Forward" key="forward" default="UpArrow" />
+		<Key displayName="Backward" key="backward" default="DownArrow" />
+		<Slider displayName="Speed" key="speed" min="0.0" max="5.0" default="1.0" unclamped="false"/>
+		<Slider displayName="Acceleration" key="acceleration" min="0.0" max="50.0" default="50.0" unclamped="false"/>
+		<Toggle displayName="Automatic" key="automatic" default="false" />
+		<Toggle displayName="Toggle Mode" key="toggle-mode" default="false" />
+	</ModuleMapperTypes>
+
+
 	<!-- Blocks can have certain predefined behaviour added without any custom code.
 		 These behaviours are called modules.
 		 The Shooting, Spewing, Spinning, and Steering modules are included by default
 		 and mods can also add new modules.
 		 Check the documentation for more information on how to use modules. -->
-	<!--<Modules>
-	
-	</Modules>-->
+	<Modules>
+		<Spinning>
+			<Forward key="forward" />
+			<Backward key="backward" />
+			<SpeedSlider key="speed" />
+			<AccelerationSlider key="acceleration" />
+			<AutomaticToggle key="automatic" />
+			<ToggleModeToggle key="toggle-mode" />
+			<Axis>X</Axis>
+			<MaxAngularSpeed>50</MaxAngularSpeed>
+
+		</Spinning>
+	</Modules>
 	
 	<!-- Include to make block take damage. -->
 	<!-- <Health>20</Health> -->

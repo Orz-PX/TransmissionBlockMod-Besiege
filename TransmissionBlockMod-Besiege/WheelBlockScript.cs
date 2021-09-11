@@ -4,13 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Modding;
+using Modding.Modules;
+using Modding.Modules.Official;
 using UnityEngine;
 
 class WheelBlockScript : BlockScript
 {
 
-    private MKey forwardKey, backwardKey;
-    private MSlider speedSlider, springSlider, damperSlider;
+    //private MKey forwardKey, backwardKey;
+    //private MSlider speedSlider, springSlider, damperSlider;
   
     private ConfigurableJoint CJ;
     private Vector3 lastScale;
@@ -19,11 +21,11 @@ class WheelBlockScript : BlockScript
 
     public override void SafeAwake()
     {
-        forwardKey = AddKey("Forward", "forward", KeyCode.UpArrow);
-        backwardKey = AddKey("Backward", "backward", KeyCode.DownArrow);
-        speedSlider = AddSlider("Speed", "speed", 1f, 0.1f, 3f);
-        springSlider = AddSlider("Spring", "Spring", 1f, 0.1f, 50f);
-        damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
+        //forwardKey = AddKey("Forward", "forward", KeyCode.UpArrow);
+        //backwardKey = AddKey("Backward", "backward", KeyCode.DownArrow);
+        //speedSlider = AddSlider("Speed", "speed", 1f, 0.1f, 3f);
+        //springSlider = AddSlider("Spring", "Spring", 1f, 0.1f, 50f);
+        //damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
 
         lastScale = transform.localScale;
         Rigidbody.mass = 0.5f;
@@ -77,7 +79,7 @@ class WheelBlockScript : BlockScript
     {
         Destroy(transform.FindChild("Boxes")?.gameObject);
         Boxes = new Boxes(transform,Rigidbody);
-        Boxes.RefreshBoxesCollider(springSlider.Value * 400f, damperSlider.Value * 50f, 1000f);
+        //Boxes.RefreshBoxesCollider(springSlider.Value * 400f, damperSlider.Value * 50f, 1000f);
         StartCoroutine(ignore());
 
         addDynamicAxis();
@@ -107,46 +109,46 @@ class WheelBlockScript : BlockScript
     //float input = 0f,lastInput = 0f;
     public override void SimulateUpdateAlways()
     {
-        float input = 0f;
+        //float input = 0f;
 
-        if (forwardKey.IsHeld)
-        {
-            input = 1f;
-            Rigidbody.WakeUp();
-        }
-        //else if (forwardKey.IsReleased)
+        //if (forwardKey.IsHeld)
         //{
-        //    input -= 1f;
+        //    input = 1f;
+        //    Rigidbody.WakeUp();
         //}
+        ////else if (forwardKey.IsReleased)
+        ////{
+        ////    input -= 1f;
+        ////}
 
-        if (backwardKey.IsHeld)
-        {
-            input = -1f;
-            Rigidbody.WakeUp();
-        }
-        //else if (backwardKey.IsReleased)
+        //if (backwardKey.IsHeld)
         //{
-        //    input -= -1f;
+        //    input = -1f;
+        //    Rigidbody.WakeUp();
         //}
+        ////else if (backwardKey.IsReleased)
+        ////{
+        ////    input -= -1f;
+        ////}
 
-        //if (input != lastInput)
-        //{
-        //    var jm = Boxes.HingeJoint.motor;
-        //    jm.targetVelocity = (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 200f;
-        //    Boxes.HingeJoint.motor = jm;
+        ////if (input != lastInput)
+        ////{
+        ////    var jm = Boxes.HingeJoint.motor;
+        ////    jm.targetVelocity = (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 200f;
+        ////    Boxes.HingeJoint.motor = jm;
 
-        //    lastInput = input;
-        //}
+        ////    lastInput = input;
+        ////}
 
 
-        //Boxes.gameObject.transform.Rotate(input * (Flipped ? -1f : 1f) * Vector3.forward, 20f * Time.deltaTime);
-        CJ.targetAngularVelocity = /*Mathf.Sign(transform.localRotation.eulerAngles.) **/ Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
+        ////Boxes.gameObject.transform.Rotate(input * (Flipped ? -1f : 1f) * Vector3.forward, 20f * Time.deltaTime);
+        //CJ.targetAngularVelocity = /*Mathf.Sign(transform.localRotation.eulerAngles.) **/ Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
 
-        //Boxes.refreshVertices();
-        //if (forwardKey.IsPressed)
-        //{
-        //    Debug.Log(Vector3.Dot( transform.TransformVector( Boxes.boxes[0].gameObject.transform.right),transform.right) );
-        //}
+        ////Boxes.refreshVertices();
+        ////if (forwardKey.IsPressed)
+        ////{
+        ////    Debug.Log(Vector3.Dot( transform.TransformVector( Boxes.boxes[0].gameObject.transform.right),transform.right) );
+        ////}
     }
 }
 class Boxes
