@@ -11,9 +11,10 @@ using UnityEngine;
 class WheelBlockScript : BlockScript
 {
 
-    //private MKey forwardKey, backwardKey;
-    //private MSlider speedSlider, springSlider, damperSlider;
-  
+    private MKey forwardKey, backwardKey;
+    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider, staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider;
+    private MToggle ignoreBaseColliderToggle, toggleToggle;
+
     private ConfigurableJoint CJ;
     private Vector3 lastScale;
 
@@ -21,14 +22,28 @@ class WheelBlockScript : BlockScript
 
     public override void SafeAwake()
     {
-        //forwardKey = AddKey("Forward", "forward", KeyCode.UpArrow);
-        //backwardKey = AddKey("Backward", "backward", KeyCode.DownArrow);
-        //speedSlider = AddSlider("Speed", "speed", 1f, 0.1f, 3f);
-        //springSlider = AddSlider("Spring", "Spring", 1f, 0.1f, 50f);
-        //damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
+        forwardKey = AddKey("Forward", "forward", KeyCode.UpArrow);
+        backwardKey = AddKey("Backward", "backward", KeyCode.DownArrow);
+        speedSlider = AddSlider("Speed", "speed", 1f, 0.1f, 3f);
+        springSlider = AddSlider("Spring", "Spring", 1f, 0.1f, 50f);
+        damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
+        acceleratedSlider = AddSlider("Accelerated", "accelerated", Single.PositiveInfinity, 0f, Single.PositiveInfinity);
+        acceleratedSlider.maxInfinity = true;
+        staticFrictionSlider = AddSlider("Static Friction", "static friction", 0.5f, 0f, 1f);
+        dynamicFrictionSlider = AddSlider("Dynamic Friction", "dynamic friction", 0.8f, 0f, 1f);
+        bouncinessSlider = AddSlider("Bounciness", "bounciness", 0f, 0f, 1f);
+
+        toggleToggle = AddToggle("Toggle", "toggle", false);
+        ignoreBaseColliderToggle = AddToggle("Ignore Base" + Environment.NewLine + "Collider", "IBC", false);
 
         lastScale = transform.localScale;
-        Rigidbody.mass = 0.5f;
+
+        Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
+        Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
+        Rigidbody.drag = Rigidbody.angularDrag = 0f;
+        Rigidbody.maxAngularVelocity = 50f;
+        Rigidbody.solverIterations = 100;
+        Rigidbody.mass =1f;
         
         CJ = GetComponent<ConfigurableJoint>();
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
@@ -48,7 +63,6 @@ class WheelBlockScript : BlockScript
     {
         if (transform.localScale != lastScale)
         {
-
             onScale?.Invoke(transform.localScale, lastScale);
             setScale(transform.localScale, lastScale);
 
@@ -79,8 +93,12 @@ class WheelBlockScript : BlockScript
     {
         Destroy(transform.FindChild("Boxes")?.gameObject);
         Boxes = new Boxes(transform,Rigidbody);
-        //Boxes.RefreshBoxesCollider(springSlider.Value * 400f, damperSlider.Value * 50f, 1000f);
-        StartCoroutine(ignore());
+        Boxes.RefreshBoxesCollider(springSlider.Value * 400f, damperSlider.Value * 50f, 50000f);
+        Boxes.SetBoxesPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
+        if (ignoreBaseColliderToggle.IsActive)
+        {
+            StartCoroutine(ignore());
+        }
 
         addDynamicAxis();
 
@@ -89,7 +107,6 @@ class WheelBlockScript : BlockScript
             CJ.axis = Vector3.forward;
             CJ.secondaryAxis = Vector3.up;
             CJ.angularXMotion = ConfigurableJointMotion.Free;
-
             //var startRotation = transform.localRotation;
             //CJ.SetTargetRotationLocal(Quaternion.Euler(0, 90, 0), startRotation);
 
@@ -106,55 +123,46 @@ class WheelBlockScript : BlockScript
             Boxes.IgnorBaseBlockCollider();
         }
     }
-    //float input = 0f,lastInput = 0f;
+
+    float input = 0f,single = 0;
     public override void SimulateUpdateAlways()
     {
-        //float input = 0f;
+        if (!toggleToggle.IsActive)
+        {
+            input = 0f;
+            if (forwardKey.IsHeld)
+            {
+                input += 1f;
+                Rigidbody.WakeUp();
+            }
+            if (backwardKey.IsHeld)
+            {
+                input += -1f;
+                Rigidbody.WakeUp();
+            }
+        }
+        else
+        {
+            if (forwardKey.IsPressed)
+            {
+                input = input != 1f ? 1f : 0f;
+                Rigidbody.WakeUp();
+            }
+            if (backwardKey.IsPressed)
+            {
+                input = input != -1f ? -1f : 0f;
+                Rigidbody.WakeUp();
+            }
+        }
+        single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
+        CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * (CJ.swapBodies ? -1f : 1f) * input * speedSlider.Value * single;
 
-        //if (forwardKey.IsHeld)
-        //{
-        //    input = 1f;
-        //    Rigidbody.WakeUp();
-        //}
-        ////else if (forwardKey.IsReleased)
-        ////{
-        ////    input -= 1f;
-        ////}
-
-        //if (backwardKey.IsHeld)
-        //{
-        //    input = -1f;
-        //    Rigidbody.WakeUp();
-        //}
-        ////else if (backwardKey.IsReleased)
-        ////{
-        ////    input -= -1f;
-        ////}
-
-        ////if (input != lastInput)
-        ////{
-        ////    var jm = Boxes.HingeJoint.motor;
-        ////    jm.targetVelocity = (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 200f;
-        ////    Boxes.HingeJoint.motor = jm;
-
-        ////    lastInput = input;
-        ////}
-
-
-        ////Boxes.gameObject.transform.Rotate(input * (Flipped ? -1f : 1f) * Vector3.forward, 20f * Time.deltaTime);
-        //CJ.targetAngularVelocity = /*Mathf.Sign(transform.localRotation.eulerAngles.) **/ Vector3.right * (Flipped ? -1f : 1f) * input * speedSlider.Value * 2f * 5f;
-
-        ////Boxes.refreshVertices();
-        ////if (forwardKey.IsPressed)
-        ////{
-        ////    Debug.Log(Vector3.Dot( transform.TransformVector( Boxes.boxes[0].gameObject.transform.right),transform.right) );
-        ////}
+        //Boxes.refreshVertices();
     }
 }
 class Boxes
 {
     public GameObject gameObject;
-    public HingeJoint HingeJoint;
     public Box[] boxes;
     public float Radius { get; set; } = 1.45f;
 
@@ -231,6 +239,13 @@ class Boxes
         foreach (var box in boxes)
         {
             box.SetJointDrive(spring, damper, maximumForce);
+        }
+    }
+    public void SetBoxesPhysicMaterail(float bounciness,float staticFriction,float dynamicFriction)
+    {
+        foreach (var box in boxes)
+        {
+            box.SetPhysicMaterail(bounciness, staticFriction, dynamicFriction);
         }
     }
     public Vector3[] GetAllVertices()
@@ -365,7 +380,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.01f,float projectionAngle = 180f)
+    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.01f,float projectionAngle = 5f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -376,13 +391,14 @@ class Box
         cj.projectionDistance = projectionDistance;
         cj.projectionAngle = projectionAngle;
     }
-    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum)
+    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum,PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
     {
         var mc = meshCollider;
         mc.material.bounciness = bounciness;
         mc.material.staticFriction = staticFriction;
         mc.material.dynamicFriction = dynamicFriction;
         mc.material.frictionCombine = frictionCombine;
+        mc.material.bounceCombine = bounceCombine;
     }
     public void SetBodyAttribute(bool useGravity = true, float mass = 0.15f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
     {

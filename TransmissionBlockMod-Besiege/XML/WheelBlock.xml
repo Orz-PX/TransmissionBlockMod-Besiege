@@ -26,7 +26,7 @@
 	<Name>Wheel Block</Name>
 	
 	<!-- TODO: Change the mass to something appropriate -->
-	<Mass>0.5</Mass>
+	<Mass>1</Mass>
 	
 	<!-- Additional keywords that can be used to search for this block
 		 in the search tab of the block bar.
@@ -60,14 +60,14 @@
 	<!-- <Script>Full Name of a BlockScript class, optional.</Script> -->
 	<Script>WheelBlockScript</Script>
 
-	<ModuleMapperTypes>
+	<!--<ModuleMapperTypes>
 		<Key displayName="Forward" key="forward" default="UpArrow" />
 		<Key displayName="Backward" key="backward" default="DownArrow" />
 		<Slider displayName="Speed" key="speed" min="0.0" max="5.0" default="1.0" unclamped="false"/>
 		<Slider displayName="Acceleration" key="acceleration" min="0.0" max="50.0" default="50.0" unclamped="false"/>
 		<Toggle displayName="Automatic" key="automatic" default="false" />
 		<Toggle displayName="Toggle Mode" key="toggle-mode" default="false" />
-	</ModuleMapperTypes>
+	</ModuleMapperTypes>-->
 
 
 	<!-- Blocks can have certain predefined behaviour added without any custom code.
@@ -75,7 +75,7 @@
 		 The Shooting, Spewing, Spinning, and Steering modules are included by default
 		 and mods can also add new modules.
 		 Check the documentation for more information on how to use modules. -->
-	<Modules>
+	<!--<Modules>
 		<Spinning>
 			<Forward key="forward" />
 			<Backward key="backward" />
@@ -87,7 +87,7 @@
 			<MaxAngularSpeed>50</MaxAngularSpeed>
 
 		</Spinning>
-	</Modules>
+	</Modules>-->
 	
 	<!-- Include to make block take damage. -->
 	<!-- <Health>20</Health> -->
