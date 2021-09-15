@@ -12,7 +12,7 @@ class WheelBlockScript : BlockScript
 {
 
     private MKey forwardKey, backwardKey;
-    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider, staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider;
+    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider, staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider,massSlider;
     private MToggle ignoreBaseColliderToggle, toggleToggle;
 
     private ConfigurableJoint CJ;
@@ -32,6 +32,7 @@ class WheelBlockScript : BlockScript
         staticFrictionSlider = AddSlider("Static Friction", "static friction", 0.5f, 0f, 1f);
         dynamicFrictionSlider = AddSlider("Dynamic Friction", "dynamic friction", 0.8f, 0f, 1f);
         bouncinessSlider = AddSlider("Bounciness", "bounciness", 0f, 0f, 1f);
+        massSlider = AddSlider("Mass", "mass", 0.25f, 0.05f, 2f);
 
         toggleToggle = AddToggle("Toggle", "toggle", false);
         ignoreBaseColliderToggle = AddToggle("Ignore Base" + Environment.NewLine + "Collider", "IBC", false);
@@ -41,7 +42,7 @@ class WheelBlockScript : BlockScript
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
-        Rigidbody.maxAngularVelocity = 50f;
+
         Rigidbody.solverIterations = 100;
         Rigidbody.mass =1f;
         
@@ -91,10 +92,13 @@ class WheelBlockScript : BlockScript
 
     public override void OnSimulateStart()
     {
+        Rigidbody.maxAngularVelocity = 50f * speedSlider.Value;
+
         Destroy(transform.FindChild("Boxes")?.gameObject);
         Boxes = new Boxes(transform,Rigidbody);
-        Boxes.RefreshBoxesCollider(springSlider.Value * 400f, damperSlider.Value * 50f, 50000f);
+        Boxes.RefreshBoxesCollider(springSlider.Value * 500f, damperSlider.Value * 250f, 5000f * springSlider.Value);
         Boxes.SetBoxesPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
+        Boxes.SetBoxesBodyAttribute(massSlider.Value);
         if (ignoreBaseColliderToggle.IsActive)
         {
             StartCoroutine(ignore());
@@ -107,12 +111,10 @@ class WheelBlockScript : BlockScript
             CJ.axis = Vector3.forward;
             CJ.secondaryAxis = Vector3.up;
             CJ.angularXMotion = ConfigurableJointMotion.Free;
-            //var startRotation = transform.localRotation;
-            //CJ.SetTargetRotationLocal(Quaternion.Euler(0, 90, 0), startRotation);
 
             var jd = CJ.angularXDrive;
-            jd.maximumForce = 5000f;
-            jd.positionDamper = 50f;
+            jd.maximumForce = 1000f;
+            //jd.positionDamper = 5000f;
             CJ.angularXDrive = jd;
 
         }
@@ -124,7 +126,7 @@ class WheelBlockScript : BlockScript
         }
     }
 
-    float input = 0f,single = 0;
+    float input = 0f,single = 0f,single1 = 0f;
     public override void SimulateUpdateAlways()
     {
         if (!toggleToggle.IsActive)
@@ -154,10 +156,36 @@ class WheelBlockScript : BlockScript
                 Rigidbody.WakeUp();
             }
         }
-        single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
-        CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * (CJ.swapBodies ? -1f : 1f) * input * speedSlider.Value * single;
+
+        if (input == 0f)
+        {
+            single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
+            var jd = CJ.angularXDrive;
+            jd.positionDamper = single1;
+            CJ.angularXDrive = jd;
+        }
+        else
+        {
+            var jd = CJ.angularXDrive;
+            jd.positionDamper = 0f;
+            CJ.angularXDrive = jd;
+            single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
+            //CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * (CJ.swapBodies ? -1f : 1f) * input * speedSlider.Value * single;
+            Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) /** (CJ.swapBodies ? -1f : 1f)*/ * input * speedSlider.Value * single, ForceMode.VelocityChange);
+        }
+ 
 
         //Boxes.refreshVertices();
+    }
+    public override void SimulateFixedUpdateAlways()
+    {
+        //foreach (var box in Boxes.boxes)
+        //{
+        //    if (!box.rigidbody.useGravity)
+        //    {
+        //        box.rigidbody.AddForce(Vector3.down * 10f, ForceMode.Force);
+        //    }
+        //}
     }
 }
 class Boxes
@@ -246,6 +274,14 @@ class Boxes
         foreach (var box in boxes)
         {
             box.SetPhysicMaterail(bounciness, staticFriction, dynamicFriction);
+        }
+    }
+
+    public void SetBoxesBodyAttribute(float mass)
+    {
+        foreach (var box in boxes)
+        {
+            box.SetBodyAttribute(true, mass);
         }
     }
     public Vector3[] GetAllVertices()
@@ -380,7 +416,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.01f,float projectionAngle = 5f)
+    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.001f,float projectionAngle = 3f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -400,7 +436,7 @@ class Box
         mc.material.frictionCombine = frictionCombine;
         mc.material.bounceCombine = bounceCombine;
     }
-    public void SetBodyAttribute(bool useGravity = true, float mass = 0.15f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
+    public void SetBodyAttribute(bool useGravity = true, float mass = 0.25f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Continuous)
     {
         var rb = gameObject.GetComponent<Rigidbody>();
         rb.useGravity = useGravity;
@@ -408,6 +444,8 @@ class Box
         rb.drag = drag;
         rb.angularDrag =angularDrag;
         rb.collisionDetectionMode = collisionDetectionMode;
+        //rb.maxAngularVelocity = 50f;
+        rb.solverIterations = 200;
     }
     public Vector3[] GetVertices()
     {
