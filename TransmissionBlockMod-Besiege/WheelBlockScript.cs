@@ -27,7 +27,7 @@ class WheelBlockScript : BlockScript
         speedSlider = AddSlider("Speed", "speed", 1f, 0.1f, 3f);
         springSlider = AddSlider("Spring", "Spring", 1f, 0.1f, 50f);
         damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
-        acceleratedSlider = AddSlider("Accelerated", "accelerated", Single.PositiveInfinity, 0f, Single.PositiveInfinity);
+        acceleratedSlider = AddSlider("Accelerated", "accelerated", 10f, 0f, 20f);
         acceleratedSlider.maxInfinity = true;
         staticFrictionSlider = AddSlider("Static Friction", "static friction", 0.5f, 0f, 1f);
         dynamicFrictionSlider = AddSlider("Dynamic Friction", "dynamic friction", 0.8f, 0f, 1f);
