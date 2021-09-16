@@ -436,7 +436,7 @@ class Box
         mc.material.frictionCombine = frictionCombine;
         mc.material.bounceCombine = bounceCombine;
     }
-    public void SetBodyAttribute(bool useGravity = true, float mass = 0.25f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Continuous)
+    public void SetBodyAttribute(bool useGravity = true, float mass = 0.25f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
     {
         var rb = gameObject.GetComponent<Rigidbody>();
         rb.useGravity = useGravity;
