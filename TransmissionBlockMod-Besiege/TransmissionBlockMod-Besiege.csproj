@@ -47,6 +47,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HighSpeedWheelBloclScript.cs" />
     <Compile Include="LanguageManager.cs" />
     <Compile Include="Modloader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -58,6 +59,7 @@
     <Content Include="Resources\Icon.png" />
     <Content Include="Resources\TransmissionBlock\cylinder.png" />
     <Content Include="Resources\TransmissionBlock\pngElectricalPin.png" />
+    <Content Include="XML\HighSpeedWheelBlock.xml" />
     <Content Include="XML\Mod.xml" />
     <Content Include="XML\TransmissionBlock.xml">
       <SubType>Designer</SubType>
@@ -68,6 +70,7 @@
     <None Include="Resources\TransmissionBlock\cylinder.obj" />
     <None Include="Resources\TransmissionBlock\ElectricalPin.obj" />
     <None Include="Resources\WheelBlock\_model1.obj" />
+    <None Include="Resources\WheelBlock\_model2.obj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
