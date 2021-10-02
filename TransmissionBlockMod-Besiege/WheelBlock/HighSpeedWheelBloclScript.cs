@@ -40,48 +40,32 @@ class HighSpeedWheelBloclScript : BlockScript
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
-
-        Rigidbody.solverIterations = 100;
-        Rigidbody.mass = 1f;
+        Rigidbody.solverVelocityIterations = 20;
+        Rigidbody.solverIterations = 200;
 
         CJ = GetComponent<ConfigurableJoint>();
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
     }
 
     private event Action<Vector3, Vector3> onScale;
-    //public override void BuildingUpdate()
-    //{
-    //    if (transform.localScale != lastScale)
-    //    {
-    //        onScale?.Invoke(transform.localScale, lastScale);
-    //        setScale(transform.localScale, lastScale);
+    public override void BuildingUpdate()
+    {
+        if (transform.localScale != lastScale)
+        {
+            onScale?.Invoke(transform.localScale, lastScale);
+            setScale(transform.localScale, lastScale);
 
-    //        lastScale = transform.localScale;
-    //    }
+            lastScale = transform.localScale;
+        }
 
-    //    void setScale(Vector3 currentScale, Vector3 lastScale)
-    //    {
-    //        var single = 0f;
-    //        if (currentScale.x != lastScale.x)
-    //        {
-    //            single = currentScale.x;
-    //            //var slider = BlockBehaviour.Sliders.ToList().Find(match => match.Key == "y-scale");
-    //            //slider?.SetValue(single);
-    //        }
-    //        else if (currentScale.y != lastScale.y)
-    //        {
-    //            single = currentScale.y;
-    //            //var slider = BlockBehaviour.Sliders.ToList().Find(match => match.Key == "x-scale");
-    //            //slider?.SetValue(single);
-    //        }
-    //        else
-    //        {
-    //            return;
-    //        }
-    //        //transform.localScale = new Vector3(single, single, currentScale.z);
-    //        //HighWheel.SetRadius(HighWheel.Radius * single);
-    //    }
-    //}
+        void setScale(Vector3 currentScale, Vector3 lastScale)
+        {
+            if (currentScale.x != lastScale.x || currentScale.y != lastScale.y)
+            {
+                HighWheel.SetStroke((currentScale.x + currentScale.y) * 0.5f);
+            }
+        }
+    }
 
     public override void OnSimulateStart()
     {
@@ -91,7 +75,7 @@ class HighSpeedWheelBloclScript : BlockScript
         HighWheel = new HighWheel(transform, Rigidbody);
         HighWheel.SetJointDrive(springSlider.Value * 500f, damperSlider.Value, 5000f * springSlider.Value);
         HighWheel.SetPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
-        HighWheel.SetBodyAttribute(true,massSlider.Value);
+        HighWheel.SetBodyAttribute(massSlider.Value);
         if (ignoreBaseColliderToggle.IsActive)
         {
             StartCoroutine(ignore());
@@ -115,12 +99,19 @@ class HighSpeedWheelBloclScript : BlockScript
         IEnumerator ignore()
         {
             yield return new WaitUntil(() => CJ.connectedBody != null);
-            //HighWheel.IgnorBaseBlockCollider();
+            HighWheel.IgnorBaseBlockCollider();
         }
     }
 
     float input = 0f, single = 0f, single1 = 0f;
     public override void SimulateUpdateAlways()
+    {
+    
+
+
+        //Boxes.refreshVertices();
+    }
+    public override void SimulateFixedUpdateAlways()
     {
         if (!toggleToggle.IsActive)
         {
@@ -166,25 +157,14 @@ class HighSpeedWheelBloclScript : BlockScript
             //CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * (CJ.swapBodies ? -1f : 1f) * input * speedSlider.Value * single;
             Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) /** (CJ.swapBodies ? -1f : 1f)*/ * input * speedSlider.Value * single, ForceMode.VelocityChange);
         }
-
-
-        //Boxes.refreshVertices();
-    }
-    public override void SimulateFixedUpdateAlways()
-    {
- 
     }
 }
 class HighWheel
 {
     public GameObject gameObject;
-    private static ModMesh mesh;
-    public MeshCollider meshCollider;
-    public ConfigurableJoint CJ;
-    public Rigidbody Rigidbody;
+    public WheelBox[] boxes;
+    public float Stroke { get; set; } = 0.2f;
 
-    private MeshFilter meshFilter;
-    private MeshRenderer meshRenderer;
     private Transform parent;
     private Rigidbody connectedBody;
     public HighWheel(Transform parent, Rigidbody connectedBody)
@@ -196,124 +176,71 @@ class HighWheel
         gameObject.transform.SetParent(parent);
         gameObject.transform.position = parent.position;
         gameObject.transform.rotation = parent.rotation;
-        gameObject.transform.localScale = Vector3.one;
-        gameObject.transform.localEulerAngles = new Vector3(0f, -90f, 0f);
-        gameObject.transform.localPosition = new Vector3(1.5f, 0f, 0.5f);
+        gameObject.transform.localScale = parent.transform.localScale;
 
         var offect_forward = 0.5f;
         var origin = gameObject.transform.localPosition;
         var anchor = Vector3.forward * offect_forward;
 
-        var mf = gameObject.AddComponent<MeshFilter>() ?? gameObject.GetComponent<MeshFilter>();
-#if DEBUG
-        var mr = gameObject.AddComponent<MeshRenderer>() ?? gameObject.GetComponent<MeshRenderer>();
-        mr.material.color = Color.red;
-#endif
-        var mc = meshCollider = gameObject.AddComponent<MeshCollider>() ?? gameObject.GetComponent<MeshCollider>();
-        mf.mesh = mc.sharedMesh = mesh = mesh ?? ModResource.GetMesh("hswheel-obj");
-        mc.convex = true;
+        float angle = 18f;
+        int index = (int)(180f / angle);
 
-        addJoint(connectedBody);
+        boxes = new WheelBox[index];
+        //外圈box位置
+        for (var i = 0; i < index; i++)
+        {
+            boxes[i] = new WheelBox(gameObject.transform, angle * i, anchor, connectedBody, Stroke);
+        }
 
+        for (var i = 0; i < index; i++)
+        {
+            for (var j = 0; j < index; j++)
+            {
+                Physics.IgnoreCollision(boxes[i].meshCollider, boxes[j].meshCollider);
+            }
+        }
     }
 
-    private void addJoint(Rigidbody connectedBody)
+    public void SetStroke(float stroke)
     {
-        CJ = gameObject.AddComponent<ConfigurableJoint>();
-        Rigidbody = gameObject.GetComponent<Rigidbody>();
+        Stroke = stroke;
 
-        CJ.autoConfigureConnectedAnchor = false;
-        CJ.connectedBody = connectedBody;
-        CJ.connectedAnchor = new Vector3(0f, 0f, 0.5f);
-        CJ.anchor = new Vector3(0f, 0f, 1.5f);
-        CJ.axis = Vector3.up;
-        CJ.secondaryAxis = Vector3.forward;
-        CJ.xMotion = CJ.yMotion = ConfigurableJointMotion.Limited;
-        CJ.angularXMotion = CJ.angularYMotion = CJ.angularZMotion = CJ.zMotion =ConfigurableJointMotion.Locked;
+        for (int i = 0; i < boxes.Length; i++)
+        {
+            boxes[i].SetStroke(stroke);
+        }
+    }
+    public void SetColliderState(bool enabled)
+    {
+        foreach (var box in boxes)
+        {
+            var rb = box.rigidbody;
+            rb.detectCollisions = enabled;
+            rb.isKinematic = !enabled;
+        }
+    }
+    public void SetJointDrive(float spring, float damper, float maximumForce)
+    {
+        foreach (var box in boxes)
+        {
+            box.SetJointDrive(spring, damper, maximumForce);
+        }
+    }
+    public void SetPhysicMaterail(float bounciness, float staticFriction, float dynamicFriction)
+    {
+        foreach (var box in boxes)
+        {
+            box.SetPhysicMaterail(bounciness, staticFriction, dynamicFriction);
+        }
+    }
 
-        SetRadius(0.35f * parent.localScale.x);
-        SetJointDrive();
-        SetJointAttribute();
-        SetBodyAttribute();
-    }
-    public void SetRadius(float radius)
+    public void SetBodyAttribute(float mass)
     {
-        var lls = CJ.linearLimit;
-        lls.limit = radius;
-        lls.bounciness = 0f;
-        lls.contactDistance = 0f;
-        CJ.linearLimit = lls;
+        foreach (var box in boxes)
+        {
+            box.SetBodyAttribute(true, mass);
+        }
     }
-    public void SetJointDrive(float spring = 400f, float damper = 50f, float maximumForce = 5000f)
-    {
-        var jointDrive = CJ.xDrive;
-        jointDrive.positionSpring = spring;
-        jointDrive.positionDamper = damper;
-        jointDrive.maximumForce = maximumForce;
-        CJ.xDrive = CJ.yDrive = jointDrive;
-    }
-    public void SetJointAttribute(float breakForce = Mathf.Infinity, float breakTorque = Mathf.Infinity, bool enableCollision = false, bool enablePreprocessing = false, JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation, float projectionDistance = 0.001f, float projectionAngle = 3f)
-    {
-        var cj = CJ;
-        cj.breakForce = breakForce;
-        cj.breakTorque = breakTorque;
-        cj.enableCollision = enableCollision;
-        cj.enablePreprocessing = enablePreprocessing;
-        cj.projectionMode = projectionMode;
-        cj.projectionDistance = projectionDistance;
-        cj.projectionAngle = projectionAngle;
-    }
-    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
-    {
-        var mc = meshCollider;
-        mc.material.bounciness = bounciness;
-        mc.material.staticFriction = staticFriction;
-        mc.material.dynamicFriction = dynamicFriction;
-        mc.material.frictionCombine = frictionCombine;
-        mc.material.bounceCombine = bounceCombine;
-    }
-    public void SetBodyAttribute(bool useGravity = true, float mass = 0.5f, float drag = 0f, float angularDrag = 0f, CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
-    {
-        var rb = gameObject.GetComponent<Rigidbody>();
-        rb.useGravity = useGravity;
-        rb.mass = mass;
-        rb.drag = drag;
-        rb.angularDrag = angularDrag;
-        rb.collisionDetectionMode = collisionDetectionMode;
-        //rb.maxAngularVelocity = 50f;
-        rb.solverIterations = 200;
-    }
-    //public void SetBoxesColliderState(bool enabled)
-    //{
-    //    foreach (var box in boxes)
-    //    {
-    //        var rb = box.rigidbody;
-    //        rb.detectCollisions = enabled;
-    //        rb.isKinematic = !enabled;
-    //    }
-    //}
-    //public void RefreshBoxesCollider(float spring, float damper, float maximumForce)
-    //{
-    //    foreach (var box in boxes)
-    //    {
-    //        box.SetJointDrive(spring, damper, maximumForce);
-    //    }
-    //}
-    //public void SetBoxesPhysicMaterail(float bounciness, float staticFriction, float dynamicFriction)
-    //{
-    //    foreach (var box in boxes)
-    //    {
-    //        box.SetPhysicMaterail(bounciness, staticFriction, dynamicFriction);
-    //    }
-    //}
-
-    //public void SetBoxesBodyAttribute(float mass)
-    //{
-    //    foreach (var box in boxes)
-    //    {
-    //        box.SetBodyAttribute(true, mass);
-    //    }
-    //}
     //public Vector3[] GetAllVertices()
     //{
     //    var index = boxes.Length;
@@ -360,16 +287,119 @@ class HighWheel
     //    meshFilter.mesh.RecalculateNormals();
     //}
 
-    //public void IgnorBaseBlockCollider()
-    //{
-    //    foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>().connectedBody?.gameObject.GetComponentsInChildren<Collider>())
-    //    {
-    //        foreach (var box in boxes)
-    //        {
-    //            Physics.IgnoreCollision(box.meshCollider, col);
-    //        }
-    //    }
-    //}
+    public void IgnorBaseBlockCollider()
+    {
+        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>().connectedBody?.gameObject.GetComponentsInChildren<Collider>())
+        {
+            foreach (var box in boxes)
+            {
+                Physics.IgnoreCollision(box.meshCollider, col);
+            }
+        }
+    }
+
+    public class WheelBox 
+    {
+        public GameObject gameObject;
+        private ConfigurableJoint configurableJoint;
+
+        private static ModMesh mesh;
+        public MeshCollider meshCollider;
+        public Rigidbody rigidbody { get { return gameObject.GetComponent<Rigidbody>(); } }
+        public float Stroke { get; set; }
+        public WheelBox(Transform parent, float angle, Vector3 connectedAnchor, Rigidbody connectedBody, float stroke)
+        {
+            gameObject = new GameObject("box");
+            gameObject.transform.SetParent(parent);
+            gameObject.transform.position = parent.position;
+            gameObject.transform.rotation = parent.rotation;
+            gameObject.transform.localPosition = connectedAnchor * 1f / parent.localScale.z;
+            gameObject.transform.localScale = new Vector3(1f / parent.localScale.z, 1f / parent.localScale.x, 1f / parent.localScale.x);
+            gameObject.transform.localEulerAngles = new Vector3(90f, 0f, 90f);
+            gameObject.transform.Rotate(Vector3.right, angle);
+
+            var mf = gameObject.AddComponent<MeshFilter>() ?? gameObject.GetComponent<MeshFilter>();
+#if DEBUG
+            var mr = gameObject.AddComponent<MeshRenderer>() ?? gameObject.GetComponent<MeshRenderer>();
+            mr.material.color = Color.red;
+#endif
+            var mc = meshCollider = gameObject.AddComponent<MeshCollider>() ?? gameObject.GetComponent<MeshCollider>();
+            mf.mesh = mc.sharedMesh = mesh = mesh ?? ModResource.GetMesh("hswheel-obj");
+            mc.convex = true;
+
+            SetPhysicMaterail();
+
+            addJoint(connectedAnchor, connectedBody);
+            SetStroke(stroke);
+            SetJointDrive();
+            SetJointAttribute();
+            SetBodyAttribute();
+        }
+        private void addJoint(Vector3 anchor, Rigidbody connectedBody)
+        {
+            var cj = configurableJoint = gameObject.AddComponent<ConfigurableJoint>();
+            cj.autoConfigureConnectedAnchor = false;
+            cj.connectedBody = connectedBody;
+            cj.connectedAnchor = anchor;
+            cj.anchor = Vector3.zero;
+            cj.axis = Vector3.forward;
+            cj.xMotion = ConfigurableJointMotion.Limited;
+            cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
+        }
+
+        public void SetStroke(float stroke,float targetPosition = 0f)
+        {
+            Stroke = stroke;
+            var _radius = stroke * gameObject.transform.parent.transform.localScale.x;
+
+            var softJointLimit = configurableJoint.linearLimit;
+            softJointLimit.limit = _radius;
+            configurableJoint.linearLimit = softJointLimit;
+
+            configurableJoint.targetPosition = new Vector3(targetPosition, 0f, 0f);
+        }
+
+        public void SetJointDrive(float spring = 400f, float damper = 50f, float maximumForce = 500f)
+        {
+            var jointDrive = configurableJoint.xDrive;
+            jointDrive.positionSpring = spring;
+            jointDrive.positionDamper = damper;
+            jointDrive.maximumForce = maximumForce;
+            configurableJoint.xDrive = jointDrive;
+        }
+        public void SetJointAttribute(float breakForce = Mathf.Infinity, float breakTorque = Mathf.Infinity, bool enableCollision = false, bool enablePreprocessing = false, JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation, float projectionDistance = 0.001f, float projectionAngle = 3f)
+        {
+            var cj = configurableJoint;
+            cj.breakForce = breakForce;
+            cj.breakTorque = breakTorque;
+            cj.enableCollision = enableCollision;
+            cj.enablePreprocessing = enablePreprocessing;
+            cj.projectionMode = projectionMode;
+            cj.projectionDistance = projectionDistance;
+            cj.projectionAngle = projectionAngle;
+        }
+        public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
+        {
+            var mc = meshCollider;
+            mc.material.bounciness = bounciness;
+            mc.material.staticFriction = staticFriction;
+            mc.material.dynamicFriction = dynamicFriction;
+            mc.material.frictionCombine = frictionCombine;
+            mc.material.bounceCombine = bounceCombine;
+        }
+        public void SetBodyAttribute(bool useGravity = true, float mass = 0.25f, float drag = 0f, float angularDrag = 0f, CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
+        {
+            var rb = gameObject.GetComponent<Rigidbody>();
+            rb.useGravity = useGravity;
+            rb.mass = mass;
+            rb.drag = drag;
+            rb.angularDrag = angularDrag;
+            rb.collisionDetectionMode = collisionDetectionMode;
+            //rb.maxAngularVelocity = 50f;
+            rb.solverIterations = 200;
+            rb.solverVelocityIterations = 20;
+        }
+    }
 }
 
 

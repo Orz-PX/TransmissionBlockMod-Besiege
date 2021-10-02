@@ -26,7 +26,7 @@
 	<Name>Wheel Block</Name>
 	
 	<!-- TODO: Change the mass to something appropriate -->
-	<Mass>1</Mass>
+	<Mass>0.5</Mass>
 	
 	<!-- Additional keywords that can be used to search for this block
 		 in the search tab of the block bar.

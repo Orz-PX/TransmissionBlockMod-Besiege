@@ -71,6 +71,7 @@
     <None Include="Resources\TransmissionBlock\ElectricalPin.obj" />
     <None Include="Resources\WheelBlock\_model1.obj" />
     <None Include="Resources\WheelBlock\_model2.obj" />
+    <None Include="Resources\WheelBlock\_model3.obj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
