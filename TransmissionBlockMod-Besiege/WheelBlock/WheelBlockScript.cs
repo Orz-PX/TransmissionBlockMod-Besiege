@@ -346,7 +346,7 @@ class Boxes
 
 class Box
 {
-    public GameObject gameObject,bobWeightBox;
+    public GameObject gameObject;
     private ConfigurableJoint configurableJoint;
 
     private static ModMesh mesh;
@@ -376,11 +376,6 @@ class Box
         var mc = meshCollider = gameObject.AddComponent<MeshCollider>() ?? gameObject.GetComponent<MeshCollider>();
         mf.mesh = mc.sharedMesh = mesh = mesh ?? ModResource.GetMesh("wheel-obj");
         mc.convex = true;
-
-        bobWeightBox = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        bobWeightBox.GetComponent<Collider>().isTrigger = true;
-        bobWeightBox.transform.parent = gameObject.transform;
-        bobWeightBox.transform.position = gameObject.transform.parent.position;
 
         SetPhysicMaterail();
 
@@ -412,9 +407,9 @@ class Box
         softJointLimit.contactDistance = _stroke;
         configurableJoint.linearLimit = softJointLimit;
 
-        var softJointLimitSpring = configurableJoint.linearLimitSpring;
-        softJointLimitSpring.spring = Mathf.Infinity;
-        configurableJoint.linearLimitSpring = softJointLimitSpring;
+        //var softJointLimitSpring = configurableJoint.linearLimitSpring;
+        //softJointLimitSpring.spring = Mathf.Infinity;
+        //configurableJoint.linearLimitSpring = softJointLimitSpring;
 
         configurableJoint.targetPosition = new Vector3(_stroke, 0f, 0f); 
     }
