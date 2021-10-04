@@ -62,7 +62,7 @@ class HighSpeedWheelBloclScript : BlockScript
         {
             if (currentScale.x != lastScale.x || currentScale.y != lastScale.y)
             {
-                HighWheel.SetStroke((currentScale.x + currentScale.y) * 0.5f);
+                HighWheel.SetStroke((currentScale.x + currentScale.y) * HighWheel.Stroke * 0.5f);
             }
         }
     }
@@ -163,7 +163,7 @@ class HighWheel
 {
     public GameObject gameObject;
     public WheelBox[] boxes;
-    public float Stroke { get; set; } = 0.2f;
+    public float Stroke { get; set; } = 1.5f;
 
     private Transform parent;
     private Rigidbody connectedBody;
@@ -350,7 +350,8 @@ class HighWheel
         public void SetStroke(float stroke,float targetPosition = 0f)
         {
             Stroke = stroke;
-            var _radius = stroke * gameObject.transform.parent.transform.localScale.x;
+            var parentScale = gameObject.transform.parent.parent.transform.localScale;
+            var _radius = stroke * (parentScale.x + parentScale.y) * 0.5f;
 
             var softJointLimit = configurableJoint.linearLimit;
             softJointLimit.limit = _radius;
