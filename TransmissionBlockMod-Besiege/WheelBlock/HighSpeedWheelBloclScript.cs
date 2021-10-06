@@ -40,7 +40,7 @@ class HighSpeedWheelBloclScript : BlockScript
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
-        Rigidbody.solverVelocityIterations = 20;
+        //Rigidbody.solverVelocityIterations = 20;
         Rigidbody.solverIterations = 200;
 
         CJ = GetComponent<ConfigurableJoint>();
@@ -73,13 +73,11 @@ class HighSpeedWheelBloclScript : BlockScript
 
         Destroy(transform.FindChild("Boxes")?.gameObject);
         HighWheel = new HighWheel(transform, Rigidbody);
-        HighWheel.SetJointDrive(springSlider.Value * 500f, damperSlider.Value, 5000f * springSlider.Value);
+        HighWheel.SetJointDrive(springSlider.Value * 500f, damperSlider.Value * 50f, 5000f * springSlider.Value);
         HighWheel.SetPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
         HighWheel.SetBodyAttribute(massSlider.Value);
-        if (ignoreBaseColliderToggle.IsActive)
-        {
-            StartCoroutine(ignore());
-        }
+   
+        StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
 
         addDynamicAxis();
 
@@ -93,13 +91,16 @@ class HighSpeedWheelBloclScript : BlockScript
             jd.maximumForce = 1000f;
             //jd.positionDamper = 5000f;
             CJ.angularXDrive = jd;
-
         }
 
-        IEnumerator ignore()
+        IEnumerator ignoreBaseCollider(bool active)
         {
-            yield return new WaitUntil(() => CJ.connectedBody != null);
-            HighWheel.IgnorBaseBlockCollider();
+            if (active)
+            {
+                yield return new WaitUntil(() => CJ.connectedBody != null);
+                HighWheel.IgnorBaseBlockCollider();
+            }
+            yield break;
         }
     }
 
@@ -113,18 +114,18 @@ class HighSpeedWheelBloclScript : BlockScript
     }
     public override void SimulateFixedUpdateAlways()
     {
+        if (CJ == null || CJ?.connectedBody == null) return;
+
         if (!toggleToggle.IsActive)
         {
             input = 0f;
             if (forwardKey.IsHeld)
             {
                 input += 1f;
-                Rigidbody.WakeUp();
             }
             if (backwardKey.IsHeld)
             {
                 input += -1f;
-                Rigidbody.WakeUp();
             }
         }
         else
@@ -132,17 +133,16 @@ class HighSpeedWheelBloclScript : BlockScript
             if (forwardKey.IsPressed)
             {
                 input = input != 1f ? 1f : 0f;
-                Rigidbody.WakeUp();
             }
             if (backwardKey.IsPressed)
             {
                 input = input != -1f ? -1f : 0f;
-                Rigidbody.WakeUp();
             }
         }
 
         if (input == 0f)
         {
+            Rigidbody.WakeUp();
             single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
             var jd = CJ.angularXDrive;
             jd.positionDamper = single1;
@@ -150,12 +150,12 @@ class HighSpeedWheelBloclScript : BlockScript
         }
         else
         {
+            Rigidbody.WakeUp();
             var jd = CJ.angularXDrive;
             jd.positionDamper = 0f;
             CJ.angularXDrive = jd;
             single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
-            //CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * (CJ.swapBodies ? -1f : 1f) * input * speedSlider.Value * single;
-            Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) /** (CJ.swapBodies ? -1f : 1f)*/ * input * speedSlider.Value * single, ForceMode.VelocityChange);
+            Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) * input * speedSlider.Value * single, ForceMode.VelocityChange);
         }
     }
 }
@@ -289,7 +289,7 @@ class HighWheel
 
     public void IgnorBaseBlockCollider()
     {
-        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>().connectedBody?.gameObject.GetComponentsInChildren<Collider>())
+        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>()?.connectedBody?.gameObject.GetComponentsInChildren<Collider>())
         {
             foreach (var box in boxes)
             {

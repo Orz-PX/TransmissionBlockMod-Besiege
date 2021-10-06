@@ -42,7 +42,7 @@ class WheelBlockScript : BlockScript
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
-        Rigidbody.solverVelocityIterations = 20;
+        //Rigidbody.solverVelocityIterations = 20;
         Rigidbody.solverIterations = 200;
         
         CJ = GetComponent<ConfigurableJoint>();
@@ -89,10 +89,7 @@ class WheelBlockScript : BlockScript
         Boxes.SetJointDrive(springSlider.Value * 500f, damperSlider.Value * 250f, 5000f * springSlider.Value);
         Boxes.SetBoxesPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
         Boxes.SetBoxesBodyAttribute(massSlider.Value);
-        if (ignoreBaseColliderToggle.IsActive)
-        {
-            StartCoroutine(ignore());
-        }
+        StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
 
         addDynamicAxis();
 
@@ -120,14 +117,16 @@ class WheelBlockScript : BlockScript
 
         }
 
-        IEnumerator ignore()
+        IEnumerator ignoreBaseCollider(bool active)
         {
-            yield return new WaitUntil(() => CJ.connectedBody != null);
-            Boxes.IgnorBaseBlockCollider();
+            if (active)
+            {
+                yield return new WaitUntil(() => CJ.connectedBody != null);
+                Boxes.IgnorBaseBlockCollider();
+            }
+            yield break;
         }
     }
-
-
     public override void SimulateUpdateAlways()
     {
         //foreach (var box in Boxes.boxes)
@@ -143,18 +142,18 @@ class WheelBlockScript : BlockScript
     float input = 0f, single = 0f, single1 = 0f;
     public override void SimulateFixedUpdateAlways()
     {
+        if (CJ == null || CJ?.connectedBody == null) return;
+
         if (!toggleToggle.IsActive)
         {
             input = 0f;
             if (forwardKey.IsHeld)
             {
                 input += 1f;
-                Rigidbody.WakeUp();
             }
             if (backwardKey.IsHeld)
             {
                 input += -1f;
-                Rigidbody.WakeUp();
             }
         }
         else
@@ -162,17 +161,16 @@ class WheelBlockScript : BlockScript
             if (forwardKey.IsPressed)
             {
                 input = input != 1f ? 1f : 0f;
-                Rigidbody.WakeUp();
             }
             if (backwardKey.IsPressed)
             {
                 input = input != -1f ? -1f : 0f;
-                Rigidbody.WakeUp();
             }
         }
 
         if (input == 0f)
         {
+            Rigidbody.WakeUp();
             single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
             var jd = CJ.angularXDrive;
             jd.positionDamper = single1;
@@ -180,14 +178,13 @@ class WheelBlockScript : BlockScript
         }
         else
         {
+            Rigidbody.WakeUp();
             var jd = CJ.angularXDrive;
             jd.positionDamper = 0f;
             CJ.angularXDrive = jd;
             single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
-            //CJ.targetAngularVelocity = Vector3.right * (Flipped ? -1f : 1f) * (CJ.swapBodies ? -1f : 1f) * input * speedSlider.Value * single;
-            Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) /** (CJ.swapBodies ? -1f : 1f)*/ * input * speedSlider.Value * single, ForceMode.VelocityChange);
+            Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) * input * speedSlider.Value * single, ForceMode.VelocityChange);
         }
-
     }
 }
 class Boxes
@@ -334,7 +331,7 @@ class Boxes
 
     public void IgnorBaseBlockCollider()
     {
-        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>().connectedBody?.gameObject.GetComponentsInChildren<Collider>())
+        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>()?.connectedBody?.gameObject.GetComponentsInChildren<Collider>())
         {
             foreach (var box in boxes)
             {
