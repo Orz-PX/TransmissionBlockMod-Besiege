@@ -42,8 +42,8 @@ class WheelBlockScript : BlockScript
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
-        //Rigidbody.solverVelocityIterations = 20;
-        Rigidbody.solverIterations = 200;
+        Rigidbody.solverVelocityIterations = 1;
+        Rigidbody.solverIterations = 100;
         
         CJ = GetComponent<ConfigurableJoint>();
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
@@ -448,8 +448,8 @@ class Box
         rb.angularDrag =angularDrag;
         rb.collisionDetectionMode = collisionDetectionMode;
         //rb.maxAngularVelocity = 50f;
-        rb.solverIterations = 200;
-        rb.solverVelocityIterations = 20;
+        rb.solverIterations = 100;
+        rb.solverVelocityIterations = 1;
         //var single = gameObject.transform.localPosition.x;
         //var single2 = gameObject.transform.localPosition.y;
         //var single3 = gameObject.transform.localPosition.z;

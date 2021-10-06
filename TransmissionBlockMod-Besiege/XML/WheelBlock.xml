@@ -55,7 +55,7 @@
 		 
 		 Valid values are entries of the BlockType enum or the numeric ID of a block. Only normal blocks can be specified as
 		 fallback, not modded blocks. -->
-	<!--<Fallback>DoubleWoodenBlock</Fallback>-->
+	<Fallback>LargeWheel</Fallback>
 	
 	<!-- <Script>Full Name of a BlockScript class, optional.</Script> -->
 	<Script>WheelBlockScript</Script>
@@ -85,7 +85,6 @@
 			<ToggleModeToggle key="toggle-mode" />
 			<Axis>X</Axis>
 			<MaxAngularSpeed>50</MaxAngularSpeed>
-
 		</Spinning>
 	</Modules>-->
 	

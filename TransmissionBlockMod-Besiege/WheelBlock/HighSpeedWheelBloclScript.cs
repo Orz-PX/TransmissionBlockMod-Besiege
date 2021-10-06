@@ -10,12 +10,13 @@ using UnityEngine;
 class HighSpeedWheelBloclScript : BlockScript
 {
     private MKey forwardKey, backwardKey;
-    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider, staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider, massSlider;
-    private MToggle ignoreBaseColliderToggle, toggleToggle;
+    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider,staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider, massSlider;
+    private MToggle ignoreBaseColliderToggle, automaticToggle, toggleToggle, autoBreakToggle;
 
     private ConfigurableJoint CJ;
     private Vector3 lastScale;
 
+    public WheelMotorControllerHinge WheelMotor; 
     public HighWheel HighWheel;
 
     public override void SafeAwake()
@@ -25,14 +26,16 @@ class HighSpeedWheelBloclScript : BlockScript
         speedSlider = AddSlider("Speed", "speed", 1f, 0.1f, 3f);
         springSlider = AddSlider("Spring", "Spring", 1f, 0.1f, 50f);
         damperSlider = AddSlider("Damper", "Damper", 1f, 0.1f, 50f);
-        acceleratedSlider = AddSlider("Accelerated", "accelerated", 10f, 0f, 20f);
-        acceleratedSlider.maxInfinity = true;
+        acceleratedSlider = AddSlider("Accelerated", "accelerated", 10f, 0.1f, 20f);
+        //acceleratedSlider.maxInfinity = true;
         staticFrictionSlider = AddSlider("Static Friction", "static friction", 0.5f, 0f, 1f);
         dynamicFrictionSlider = AddSlider("Dynamic Friction", "dynamic friction", 0.8f, 0f, 1f);
         bouncinessSlider = AddSlider("Bounciness", "bounciness", 0f, 0f, 1f);
         massSlider = AddSlider("Mass", "mass", 0.25f, 0.05f, 2f);
 
+        automaticToggle = AddToggle("Automatic", "automatic", false);
         toggleToggle = AddToggle("Toggle", "toggle", false);
+        autoBreakToggle = AddToggle("Auto Break", "auto break", true);
         ignoreBaseColliderToggle = AddToggle("Ignore Base" + Environment.NewLine + "Collider", "IBC", false);
 
         lastScale = transform.localScale;
@@ -40,11 +43,15 @@ class HighSpeedWheelBloclScript : BlockScript
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
-        //Rigidbody.solverVelocityIterations = 20;
-        Rigidbody.solverIterations = 200;
+        Rigidbody.solverVelocityIterations = 10;
+        Rigidbody.solverIterations = 100;
 
         CJ = GetComponent<ConfigurableJoint>();
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
+
+        WheelMotor = GetComponent<WheelMotorControllerHinge>() ?? gameObject.AddComponent<WheelMotorControllerHinge>();
+        WheelMotor.Setup(forwardKey, backwardKey, speedSlider, acceleratedSlider, automaticToggle, toggleToggle, autoBreakToggle, Rigidbody, CJ);
+
     }
 
     private event Action<Vector3, Vector3> onScale;
@@ -69,17 +76,19 @@ class HighSpeedWheelBloclScript : BlockScript
 
     public override void OnSimulateStart()
     {
-        Rigidbody.maxAngularVelocity = 50f * speedSlider.Value;
+        //Rigidbody.maxAngularVelocity = 50f * speedSlider.Value;
 
         Destroy(transform.FindChild("Boxes")?.gameObject);
         HighWheel = new HighWheel(transform, Rigidbody);
         HighWheel.SetJointDrive(springSlider.Value * 500f, damperSlider.Value * 50f, 5000f * springSlider.Value);
         HighWheel.SetPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
         HighWheel.SetBodyAttribute(massSlider.Value);
-   
+
+        WheelMotor.setFalseOnStart();
+
         StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
 
-        addDynamicAxis();
+        //addDynamicAxis();
 
         void addDynamicAxis()
         {
@@ -104,59 +113,67 @@ class HighSpeedWheelBloclScript : BlockScript
         }
     }
 
-    float input = 0f, single = 0f, single1 = 0f;
+    //float input = 0f, single = 0f, single1 = 0f;
     public override void SimulateUpdateAlways()
     {
-    
 
+        WheelMotor.UpdateBlock();
 
         //Boxes.refreshVertices();
     }
     public override void SimulateFixedUpdateAlways()
     {
-        if (CJ == null || CJ?.connectedBody == null) return;
+        //if (CJ == null || CJ?.connectedBody == null) return;
 
-        if (!toggleToggle.IsActive)
-        {
-            input = 0f;
-            if (forwardKey.IsHeld)
-            {
-                input += 1f;
-            }
-            if (backwardKey.IsHeld)
-            {
-                input += -1f;
-            }
-        }
-        else
-        {
-            if (forwardKey.IsPressed)
-            {
-                input = input != 1f ? 1f : 0f;
-            }
-            if (backwardKey.IsPressed)
-            {
-                input = input != -1f ? -1f : 0f;
-            }
-        }
+        //if (!toggleToggle.IsActive)
+        //{
+        //    input = 0f;
+        //    if (forwardKey.IsHeld)
+        //    {
+        //        input += 1f;
+        //    }
+        //    if (backwardKey.IsHeld)
+        //    {
+        //        input += -1f;
+        //    }
+        //}
+        //else
+        //{
+        //    if (forwardKey.IsPressed)
+        //    {
+        //        input = input != 1f ? 1f : 0f;
+        //    }
+        //    if (backwardKey.IsPressed)
+        //    {
+        //        input = input != -1f ? -1f : 0f;
+        //    }
+        //}
 
-        if (input == 0f)
-        {
-            Rigidbody.WakeUp();
-            single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
-            var jd = CJ.angularXDrive;
-            jd.positionDamper = single1;
-            CJ.angularXDrive = jd;
-        }
-        else
-        {
-            Rigidbody.WakeUp();
-            var jd = CJ.angularXDrive;
-            jd.positionDamper = 0f;
-            CJ.angularXDrive = jd;
-            single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
-            Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) * input * speedSlider.Value * single, ForceMode.VelocityChange);
-        }
+        //if (input == 0f)
+        //{
+        //    Rigidbody.WakeUp();
+        //    single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
+        //    var jd = CJ.angularXDrive;
+        //    jd.positionDamper = single1;
+        //    CJ.angularXDrive = jd;
+        //}
+        //else
+        //{
+        //    Rigidbody.WakeUp();
+        //    var jd = CJ.angularXDrive;
+        //    jd.positionDamper = 0f;
+        //    CJ.angularXDrive = jd;
+        //    single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
+        //    Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) * input * speedSlider.Value * single, ForceMode.VelocityChange);
+        //}
+
+        WheelMotor.FixedUpdateBlock(Flipped);
+    }
+
+    public override void KeyEmulationUpdate()
+    {
+        base.KeyEmulationUpdate();
+        WheelMotor.EmulationUpdateBlock();
     }
 }
 class HighWheel
@@ -397,8 +414,8 @@ class HighWheel
             rb.angularDrag = angularDrag;
             rb.collisionDetectionMode = collisionDetectionMode;
             //rb.maxAngularVelocity = 50f;
-            rb.solverIterations = 200;
-            rb.solverVelocityIterations = 20;
+            rb.solverIterations = 100;
+            rb.solverVelocityIterations = 10;
         }
     }
 }
