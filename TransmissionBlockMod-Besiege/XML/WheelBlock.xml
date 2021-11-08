@@ -26,7 +26,7 @@
 	<Name>Wheel Block</Name>
 	
 	<!-- TODO: Change the mass to something appropriate -->
-	<Mass>1</Mass>
+	<Mass>0.5</Mass>
 	
 	<!-- Additional keywords that can be used to search for this block
 		 in the search tab of the block bar.
@@ -55,7 +55,7 @@
 		 
 		 Valid values are entries of the BlockType enum or the numeric ID of a block. Only normal blocks can be specified as
 		 fallback, not modded blocks. -->
-	<!--<Fallback>DoubleWoodenBlock</Fallback>-->
+	<Fallback>LargeWheel</Fallback>
 	
 	<!-- <Script>Full Name of a BlockScript class, optional.</Script> -->
 	<Script>WheelBlockScript</Script>
@@ -85,7 +85,6 @@
 			<ToggleModeToggle key="toggle-mode" />
 			<Axis>X</Axis>
 			<MaxAngularSpeed>50</MaxAngularSpeed>
-
 		</Spinning>
 	</Modules>-->
 	
