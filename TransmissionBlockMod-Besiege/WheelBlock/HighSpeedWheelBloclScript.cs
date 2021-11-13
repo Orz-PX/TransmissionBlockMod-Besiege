@@ -53,7 +53,6 @@ class HighSpeedWheelBloclScript : BlockScript
         WheelMotor.Setup(forwardKey, backwardKey, speedSlider, acceleratedSlider, automaticToggle, toggleToggle, autoBreakToggle, Rigidbody, CJ);
 
     }
-
     private event Action<Vector3, Vector3> onScale;
     public override void BuildingUpdate()
     {
@@ -73,7 +72,6 @@ class HighSpeedWheelBloclScript : BlockScript
             }
         }
     }
-
     public override void OnSimulateStart()
     {
         //Rigidbody.maxAngularVelocity = 50f * speedSlider.Value;
@@ -87,9 +85,7 @@ class HighSpeedWheelBloclScript : BlockScript
         WheelMotor.setFalseOnStart();
 
         StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
-
         //addDynamicAxis();
-
         void addDynamicAxis()
         {
             CJ.axis = Vector3.forward;
@@ -112,13 +108,10 @@ class HighSpeedWheelBloclScript : BlockScript
             yield break;
         }
     }
-
     //float input = 0f, single = 0f, single1 = 0f;
     public override void SimulateUpdateAlways()
     {
-
         WheelMotor.UpdateBlock();
-
         //Boxes.refreshVertices();
     }
     public override void SimulateFixedUpdateAlways()
@@ -217,7 +210,6 @@ class HighWheel
             }
         }
     }
-
     public void SetStroke(float stroke)
     {
         Stroke = stroke;
@@ -250,7 +242,6 @@ class HighWheel
             box.SetPhysicMaterail(bounciness, staticFriction, dynamicFriction);
         }
     }
-
     public void SetBodyAttribute(float mass)
     {
         foreach (var box in boxes)
@@ -297,13 +288,11 @@ class HighWheel
     //            }
     //        }
     //    }
-
     //    meshFilter.mesh.uv = uvs;
     //    meshFilter.mesh.triangles = tris;
     //    meshFilter.mesh.RecalculateBounds();
     //    meshFilter.mesh.RecalculateNormals();
     //}
-
     public void IgnorBaseBlockCollider()
     {
         foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>()?.connectedBody?.gameObject.GetComponentsInChildren<Collider>())
@@ -363,7 +352,6 @@ class HighWheel
             cj.xMotion = ConfigurableJointMotion.Limited;
             cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
         }
-
         public void SetStroke(float stroke,float targetPosition = 0f)
         {
             Stroke = stroke;
@@ -376,7 +364,6 @@ class HighWheel
 
             configurableJoint.targetPosition = new Vector3(targetPosition, 0f, 0f);
         }
-
         public void SetJointDrive(float spring = 400f, float damper = 50f, float maximumForce = 500f)
         {
             var jointDrive = configurableJoint.xDrive;
