@@ -12,8 +12,12 @@ class WheelBlockScript : BlockScript
 {
 
     private MKey forwardKey, backwardKey;
-    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider, staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider,massSlider;
+    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider, staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider, massSlider;
     private MToggle ignoreBaseColliderToggle, toggleToggle;
+    private float springMultiplier = 500f;
+    private float damperMultiplier = 10f;
+    private float maxForceMultiplier = 5000f;
+    private float maxAngularVelocityMultiplier = 10f;
 
     private ConfigurableJoint CJ;
     private Vector3 lastScale;
@@ -44,12 +48,12 @@ class WheelBlockScript : BlockScript
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
         Rigidbody.solverVelocityIterations = 1;
         Rigidbody.solverIterations = 100;
-        
+
         CJ = GetComponent<ConfigurableJoint>();
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
     }
 
-    private event Action<Vector3,Vector3> onScale;
+    private event Action<Vector3, Vector3> onScale;
     //public override void BuildingUpdate()
     //{
     //    if (transform.localScale != lastScale)
@@ -82,11 +86,11 @@ class WheelBlockScript : BlockScript
     GameObject[] gos = new GameObject[50];
     public override void OnSimulateStart()
     {
-        Rigidbody.maxAngularVelocity = 50f * speedSlider.Value;
+        Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
 
         Destroy(transform.FindChild("Boxes")?.gameObject);
-        Boxes = new Boxes(transform,Rigidbody);
-        Boxes.SetJointDrive(springSlider.Value * 500f, damperSlider.Value * 250f, 5000f * springSlider.Value);
+        Boxes = new Boxes(transform, Rigidbody);
+        Boxes.SetJointDrive(springSlider.Value * springMultiplier, damperSlider.Value * damperMultiplier, springSlider.Value * maxForceMultiplier);
         Boxes.SetBoxesPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
         Boxes.SetBoxesBodyAttribute(massSlider.Value);
         StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
@@ -193,7 +197,7 @@ class WheelBlockScript : BlockScript
     {
         base.SimulateLateUpdateAlways();
 
-        Boxes.RefreshCenterOfMass(0.95f);
+        Boxes.RefreshCenterOfMass(0.99f);
     }
 }
 class Boxes
@@ -239,14 +243,14 @@ class Boxes
                                                 offect_forward / gameObject.transform.localScale.z
                                              );
 
-            boxes[i] = new Box(gameObject.transform, position, anchor, connectedBody, Stroke,Radius);
+            boxes[i] = new Box(gameObject.transform, position, anchor, connectedBody, Stroke, Radius);
         }
 
         for (var i = 0; i < index; i++)
         {
             for (var j = 0; j < index; j++)
-            { 
-            Physics.IgnoreCollision(boxes[i].meshCollider, boxes[j].meshCollider);
+            {
+                Physics.IgnoreCollision(boxes[i].meshCollider, boxes[j].meshCollider);
             }
         }
 
@@ -254,7 +258,7 @@ class Boxes
         meshRenderer = gameObject.AddComponent<MeshRenderer>();
         meshRenderer.material.color = Color.green;
 
-       
+
     }
     public void SetStroke(float stroke)
     {
@@ -274,14 +278,14 @@ class Boxes
             rb.isKinematic = !enabled;
         }
     }
-    public void SetJointDrive(float spring,float damper,float maximumForce)
+    public void SetJointDrive(float spring, float damper, float maximumForce)
     {
         foreach (var box in boxes)
         {
             box.SetJointDrive(spring, damper, maximumForce);
         }
     }
-    public void SetBoxesPhysicMaterail(float bounciness,float staticFriction,float dynamicFriction)
+    public void SetBoxesPhysicMaterail(float bounciness, float staticFriction, float dynamicFriction)
     {
         foreach (var box in boxes)
         {
@@ -306,7 +310,7 @@ class Boxes
     public Vector3[] GetAllVertices()
     {
         var index = boxes.Length;
-        var vectors = new Vector3[index*2];
+        var vectors = new Vector3[index * 2];
 
         var j = 0;
         for (var i = 0; i < index; i++)
@@ -321,9 +325,9 @@ class Boxes
         meshFilter.mesh.vertices = GetAllVertices();
         var index = GetAllVertices().Length;
         var uvs = new Vector2[index];
-        var tris = new int[(index-2) * 3];
+        var tris = new int[(index - 2) * 3];
         var j = 0;
-        for (var i = 0; i<index; i++)
+        for (var i = 0; i < index; i++)
         {
             uvs[i] = new Vector2(1.0f * i / index, 1);
             if (j < tris.Length)
@@ -342,7 +346,7 @@ class Boxes
                 }
             }
         }
-   
+
         meshFilter.mesh.uv = uvs;
         meshFilter.mesh.triangles = tris;
         meshFilter.mesh.RecalculateBounds();
@@ -371,7 +375,7 @@ class Box
     public Rigidbody rigidbody { get { return gameObject.GetComponent<Rigidbody>(); } }
     public float Stroke { get; private set; }
     public float Radius { get; private set; }
-    public Box(Transform parent, Vector3 localPosition, Vector3 connectedAnchor,Rigidbody connectedBody,float stroke,float radius)
+    public Box(Transform parent, Vector3 localPosition, Vector3 connectedAnchor, Rigidbody connectedBody, float stroke, float radius)
     {
         Radius = radius;
 
@@ -464,7 +468,7 @@ class Box
         jointDrive.maximumForce = maximumForce;
         configurableJoint.xDrive = jointDrive;
     }
-    public void SetJointAttribute(float breakForce = Mathf.Infinity,float breakTorque = Mathf.Infinity, bool enableCollision = false,bool enablePreprocessing = false,JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation,float projectionDistance = 0.001f,float projectionAngle = 3f)
+    public void SetJointAttribute(float breakForce = Mathf.Infinity, float breakTorque = Mathf.Infinity, bool enableCollision = false, bool enablePreprocessing = false, JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation, float projectionDistance = 0.001f, float projectionAngle = 3f)
     {
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -475,7 +479,7 @@ class Box
         cj.projectionDistance = projectionDistance;
         cj.projectionAngle = projectionAngle;
     }
-    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum,PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
+    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
     {
         var mc = meshCollider;
         mc.material.bounciness = bounciness;
@@ -484,7 +488,7 @@ class Box
         mc.material.frictionCombine = frictionCombine;
         mc.material.bounceCombine = bounceCombine;
     }
-    public void SetBodyAttribute(bool useGravity = true, float mass = 0.15f, float drag = 0f, float angularDrag = 0f,CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
+    public void SetBodyAttribute(bool useGravity = true, float mass = 0.15f, float drag = 0f, float angularDrag = 0f, CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
     {
         var rb = gameObject.GetComponent<Rigidbody>();
         rb.angularDrag = angularDrag;
@@ -508,7 +512,7 @@ class Box
         go.transform.SetParent(parent);
         go.GetComponent<Collider>().isTrigger = true;
         go.transform.rotation = parent.rotation;
-        go.transform.position = parent.TransformDirection(rb.centerOfMass + Vector3.right*0.5f) + parent.position;
+        go.transform.position = parent.TransformDirection(rb.centerOfMass + Vector3.right * 0.5f) + parent.position;
         go.transform.localScale *= 0.5f;
 #endif
     }
