@@ -243,7 +243,7 @@ class Boxes
             //                                    offset_forward / gameObject.transform.localScale.z
             //                                 );
 
-            boxes[i] = new Box(gameObject.transform, position, anchor, connectedBody, Stroke,Radius);
+            boxes[i] = new Box(gameObject.transform, connectedBody, angle * i, offset_forward, Radius, Stroke);
         }
 
         for (var i = 0; i < index; i++)
@@ -375,7 +375,7 @@ class Box
     public Rigidbody rigidbody { get { return gameObject.GetComponent<Rigidbody>(); } }
     public float Stroke { get; private set; }
     public float Radius { get; private set; }
-    public Box(Transform parent, Vector3 localPosition, Vector3 connectedAnchor,Rigidbody connectedBody,float stroke,float radius)
+    public Box(Transform parent, Rigidbody connectedBody,float angle, float offset_forward, float radius, float stroke)
     {
         Radius = radius;
 
