@@ -53,7 +53,7 @@ class WheelBlockScript : BlockScript
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
     }
 
-    private event Action<Vector3,Vector3> onScale;
+    //private event Action<Vector3,Vector3> onScale;
     //public override void BuildingUpdate()
     //{
     //    if (transform.localScale != lastScale)
