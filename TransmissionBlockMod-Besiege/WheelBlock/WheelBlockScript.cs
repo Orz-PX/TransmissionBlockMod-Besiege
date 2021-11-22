@@ -53,6 +53,12 @@ class WheelBlockScript : BlockScript
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
     }
 
+    public override void OnBlockPlaced()
+    {
+        Destroy(transform.FindChild("Boxes")?.gameObject);
+        Boxes = new Boxes(transform, Rigidbody);
+    }
+
     //private event Action<Vector3,Vector3> onScale;
     //public override void BuildingUpdate()
     //{
@@ -88,8 +94,8 @@ class WheelBlockScript : BlockScript
     {
         Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
 
-        Destroy(transform.FindChild("Boxes")?.gameObject);
-        Boxes = new Boxes(transform, Rigidbody);
+        //Destroy(transform.FindChild("Boxes")?.gameObject);
+        //Boxes = new Boxes(transform, Rigidbody);
         Boxes.SetJointDrive(springSlider.Value * springMultiplier, damperSlider.Value * damperMultiplier, springSlider.Value * maxForceMultiplier);
         Boxes.SetBoxesPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
         Boxes.SetBoxesBodyAttribute(massSlider.Value);
@@ -410,15 +416,15 @@ class Box
         mr.material.color = Color.red;
 #endif
 
-        //SetPhysicMaterail();
+        SetPhysicMaterail();
 
-        //addJoint(connectedAnchor, connectedBody);
+        addJoint(connectedAnchor, connectedBody);
+        SetStroke(stroke);
+        //SetRadiusAndStroke(radius);
         //SetStroke(stroke);
-        ////SetRadiusAndStroke(radius);
-        ////SetStroke(stroke);
-        //SetJointDrive();
-        //SetJointAttribute();
-        //SetBodyAttribute();
+        SetJointDrive();
+        SetJointAttribute();
+        SetBodyAttribute();
     }
     private void addJoint(Vector3 anchor, Rigidbody connectedBody)
     {
@@ -436,6 +442,7 @@ class Box
         Stroke = stroke;
 
         //radius
+        //set connected anchor
         var cj = configurableJoint;
         var parent = cj.connectedBody.transform;
         var radius = Radius /** parent.localScale.x*/;
@@ -447,6 +454,7 @@ class Box
         cj.connectedAnchor = Vector3.Scale(vector, connectedAnchor);
 
         //stroke
+        //set linear limit
         //var _stroke = stroke * gameObject.transform.parent.transform.localScale.x;
         var _stroke = stroke;
         _stroke = _stroke * 0.5f;
