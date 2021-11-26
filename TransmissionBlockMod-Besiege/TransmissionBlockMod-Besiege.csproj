@@ -52,6 +52,7 @@
     <Compile Include="Modloader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TransmissionBlockScript.cs" />
+    <Compile Include="WheelBlock\Tyre.cs" />
     <Compile Include="WheelBlock\WheelBlockScript.cs" />
     <Compile Include="WheelBlock\WheelMotorControllerHinge.cs" />
   </ItemGroup>

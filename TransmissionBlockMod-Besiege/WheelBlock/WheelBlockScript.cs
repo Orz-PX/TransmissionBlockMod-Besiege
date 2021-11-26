@@ -22,7 +22,8 @@ class WheelBlockScript : BlockScript
     private ConfigurableJoint CJ;
     //private Vector3 lastScale;
 
-    public Boxes Boxes;
+    //public Boxes Boxes;
+    public Tyre Tyre;
 
     public override void SafeAwake()
     {
@@ -51,12 +52,17 @@ class WheelBlockScript : BlockScript
 
         CJ = GetComponent<ConfigurableJoint>();
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
+
+        //Boxes = gameObject.AddComponent<Boxes>();
+        Tyre = GetComponent<Tyre>() ?? gameObject.AddComponent<Tyre>();
     }
 
     public override void OnBlockPlaced()
     {
-        Destroy(transform.FindChild("Boxes")?.gameObject);
-        Boxes = new Boxes(transform, Rigidbody);
+        //Destroy(transform.FindChild("Boxes")?.gameObject);
+        //Boxes = new Boxes(transform, Rigidbody);
+        //Boxes.CreateBoxes(18f, 0.5f);
+        Tyre.CreateBoxes(120f);
     }
 
     //private event Action<Vector3,Vector3> onScale;
@@ -92,17 +98,26 @@ class WheelBlockScript : BlockScript
     GameObject[] gos = new GameObject[50];
     public override void OnSimulateStart()
     {
-        Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
+        //Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
 
-        //Destroy(transform.FindChild("Boxes")?.gameObject);
-        //Boxes = new Boxes(transform, Rigidbody);
-        Boxes.SetJointDrive(springSlider.Value * springMultiplier, damperSlider.Value * damperMultiplier, springSlider.Value * maxForceMultiplier);
-        Boxes.SetBoxesPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
-        Boxes.SetBoxesBodyAttribute(massSlider.Value);
-        StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
+        ////Destroy(transform.FindChild("Boxes")?.gameObject);
+        ////Boxes = new Boxes(transform, Rigidbody);
+        //Boxes.SetJointDrive(springSlider.Value * springMultiplier, damperSlider.Value * damperMultiplier, springSlider.Value * maxForceMultiplier);
+        //Boxes.SetBoxesPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
+        //Boxes.SetBoxesBodyAttribute(massSlider.Value);
+        //StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
 
-        addDynamicAxis();
+        //addDynamicAxis();
 
+        //foreach (var box in Tyre.boxes)
+        //{
+        //    var parent = box.transform.parent;
+        //    Debug.Log(parent.InverseTransformDirection(box.transform.position - parent.position));
+        //}
+
+        Tyre.AddJoint();
+        Tyre.SetStroke();
+       
         //foreach (var box in Boxes.boxes)
         //{
         //    var index = Boxes.boxes.ToList().IndexOf(box);
@@ -114,101 +129,102 @@ class WheelBlockScript : BlockScript
         //    go.AddComponent<DestroyIfEditMode>();
         //}
 
-        void addDynamicAxis()
-        {
-            CJ.axis = Vector3.forward;
-            CJ.secondaryAxis = Vector3.up;
-            CJ.angularXMotion = ConfigurableJointMotion.Free;
-
-            var jd = CJ.angularXDrive;
-            jd.maximumForce = 1000f;
-            //jd.positionDamper = 5000f;
-            CJ.angularXDrive = jd;
-
-        }
-
-        IEnumerator ignoreBaseCollider(bool active)
-        {
-            if (active)
-            {
-                yield return new WaitUntil(() => CJ.connectedBody != null);
-                Boxes.IgnorBaseBlockCollider();
-            }
-            yield break;
-        }
-    }
-    public override void SimulateUpdateAlways()
-    {
-        //foreach (var box in Boxes.boxes)
+        //void addDynamicAxis()
         //{
-        //    var index = Boxes.boxes.ToList().IndexOf(box);
-        //    var go = gos[index];
-        //    go.transform.position = Boxes.gameObject.transform.TransformPoint(box.rigidbody.centerOfMass);
+        //    CJ.axis = Vector3.forward;
+        //    CJ.secondaryAxis = Vector3.up;
+        //    CJ.angularXMotion = ConfigurableJointMotion.Free;
+
+        //    var jd = CJ.angularXDrive;
+        //    jd.maximumForce = 1000f;
+        //    //jd.positionDamper = 5000f;
+        //    CJ.angularXDrive = jd;
 
         //}
 
-        //Boxes.refreshVertices();
-        //Boxes.RefreshCenterOfMass();
+        //IEnumerator ignoreBaseCollider(bool active)
+        //{
+        //    if (active)
+        //    {
+        //        yield return new WaitUntil(() => CJ.connectedBody != null);
+        //        Boxes.IgnorBaseBlockCollider();
+        //    }
+        //    yield break;
+        //}
     }
-    float input = 0f, single = 0f, single1 = 0f;
-    public override void SimulateFixedUpdateAlways()
-    {
-        if (CJ == null || CJ?.connectedBody == null) return;
+    //public override void SimulateUpdateAlways()
+    //{
+    //    //foreach (var box in Boxes.boxes)
+    //    //{
+    //    //    var index = Boxes.boxes.ToList().IndexOf(box);
+    //    //    var go = gos[index];
+    //    //    go.transform.position = Boxes.gameObject.transform.TransformPoint(box.rigidbody.centerOfMass);
 
-        if (!toggleToggle.IsActive)
-        {
-            input = 0f;
-            if (forwardKey.IsHeld)
-            {
-                input += 1f;
-            }
-            if (backwardKey.IsHeld)
-            {
-                input += -1f;
-            }
-        }
-        else
-        {
-            if (forwardKey.IsPressed)
-            {
-                input = input != 1f ? 1f : 0f;
-            }
-            if (backwardKey.IsPressed)
-            {
-                input = input != -1f ? -1f : 0f;
-            }
-        }
+    //    //}
 
-        if (input == 0f)
-        {
-            Rigidbody.WakeUp();
-            single = 0f;
-            single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
-            var jd = CJ.angularXDrive;
-            jd.positionDamper = single1;
-            CJ.angularXDrive = jd;
-        }
-        else
-        {
-            Rigidbody.WakeUp();
-            var jd = CJ.angularXDrive;
-            jd.positionDamper = 0f;
-            CJ.angularXDrive = jd;
-            single1 = 0;
-            single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
-            Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) * input * speedSlider.Value * single, ForceMode.VelocityChange);
-        }
-    }
-    public override void SimulateLateUpdateAlways()
-    {
-        base.SimulateLateUpdateAlways();
+    //    //Boxes.refreshVertices();
+    //    //Boxes.RefreshCenterOfMass();
+    //}
+    //float input = 0f, single = 0f, single1 = 0f;
+    //public override void SimulateFixedUpdateAlways()
+    //{
+    //    if (CJ == null || CJ?.connectedBody == null) return;
 
-        Boxes.RefreshCenterOfMass(0.95f);
-    }
+    //    if (!toggleToggle.IsActive)
+    //    {
+    //        input = 0f;
+    //        if (forwardKey.IsHeld)
+    //        {
+    //            input += 1f;
+    //        }
+    //        if (backwardKey.IsHeld)
+    //        {
+    //            input += -1f;
+    //        }
+    //    }
+    //    else
+    //    {
+    //        if (forwardKey.IsPressed)
+    //        {
+    //            input = input != 1f ? 1f : 0f;
+    //        }
+    //        if (backwardKey.IsPressed)
+    //        {
+    //            input = input != -1f ? -1f : 0f;
+    //        }
+    //    }
+
+    //    if (input == 0f)
+    //    {
+    //        Rigidbody.WakeUp();
+    //        single = 0f;
+    //        single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
+    //        var jd = CJ.angularXDrive;
+    //        jd.positionDamper = single1;
+    //        CJ.angularXDrive = jd;
+    //    }
+    //    else
+    //    {
+    //        Rigidbody.WakeUp();
+    //        var jd = CJ.angularXDrive;
+    //        jd.positionDamper = 0f;
+    //        CJ.angularXDrive = jd;
+    //        single1 = 0;
+    //        single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
+    //        Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) * input * speedSlider.Value * single, ForceMode.VelocityChange);
+    //    }
+    //}
+    //public override void SimulateLateUpdateAlways()
+    //{
+    //    base.SimulateLateUpdateAlways();
+
+    //    Boxes.RefreshCenterOfMass(0.95f);
+    //}
 }
-class Boxes
+
+public class Boxes :MonoBehaviour
 {
-    public GameObject gameObject;
+    public GameObject go;
     public Box[] boxes;
     public float Stroke { get; set; } = 0.25f;
     public float Radius { get; set; } = 1.5f;
@@ -222,17 +238,17 @@ class Boxes
         this.parent = parent;
         this.connectedBody = connectedBody;
 
-        gameObject = new GameObject("Boxes");
-        gameObject.transform.SetParent(parent);
-        gameObject.transform.position = parent.position;
-        gameObject.transform.rotation = parent.rotation;
+        go = new GameObject("Boxes");
+        go.transform.SetParent(parent);
+        go.transform.position = parent.position;
+        go.transform.rotation = parent.rotation;
         //gameObject.transform.localScale = parent.localScale;
 
         var offset_forward = 0.5f;
         //var origin = gameObject.transform.localPosition;
         //var origin = Vector3.zero;
         var anchor = Vector3.forward * offset_forward;
-        Stroke /= gameObject.transform.localScale.x;
+        Stroke /= go.transform.localScale.x;
         //圆半径和旋转角
         //float radius = Stroke / gameObject.transform.localScale.x;
         //float radius = Radius / gameObject.transform.localScale.x;
@@ -249,7 +265,7 @@ class Boxes
             //                                    offset_forward / gameObject.transform.localScale.z
             //                                 );
 
-            boxes[i] = new Box(gameObject.transform, connectedBody, angle * i, offset_forward, Radius, Stroke);
+            boxes[i] = new Box(go.transform, connectedBody, angle * i, offset_forward, Radius, Stroke);
         }
 
         for (var i = 0; i < index; i++)
@@ -260,12 +276,43 @@ class Boxes
             }
         }
 
-        meshFilter = gameObject.AddComponent<MeshFilter>();
-        meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        meshFilter = go.AddComponent<MeshFilter>();
+        meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.material.color = Color.green;
 
 
     }
+
+    public void CreateBoxes(float angle,float offset_forward)
+    {
+        this.parent = transform.parent;
+        this.connectedBody = gameObject.GetComponent<Rigidbody>();
+
+        go = new GameObject("Boxes");
+        go.transform.SetParent(parent);
+        go.transform.position = parent.position;
+        go.transform.rotation = parent.rotation;
+
+        Stroke /= go.transform.localScale.x;
+
+        int index = (int)(360f / angle);
+
+        boxes = new Box[index];
+        //外圈box位置
+        for (var i = 0; i < index; i++)
+        {
+            boxes[i] = new Box(go.transform, connectedBody, angle * i, offset_forward, Radius, Stroke);
+        }
+
+        for (var i = 0; i < index; i++)
+        {
+            for (var j = 0; j < index; j++)
+            {
+                Physics.IgnoreCollision(boxes[i].meshCollider, boxes[j].meshCollider);
+            }
+        }
+    }
+
     public void SetStroke(float stroke)
     {
         Stroke = stroke;
@@ -321,8 +368,8 @@ class Boxes
         var j = 0;
         for (var i = 0; i < index; i++)
         {
-            vectors[j++] = gameObject.transform./*parent.*/TransformPoint(boxes[i].GetVertices()[0]);
-            vectors[j++] = gameObject.transform./*parent.*/TransformPoint(boxes[i].GetVertices()[1]);
+            vectors[j++] = go.transform./*parent.*/TransformPoint(boxes[i].GetVertices()[0]);
+            vectors[j++] = go.transform./*parent.*/TransformPoint(boxes[i].GetVertices()[1]);
         }
         return vectors;
     }
@@ -371,7 +418,7 @@ class Boxes
     }
 }
 
-class Box
+public class Box
 {
     public GameObject gameObject;
     private ConfigurableJoint configurableJoint;
@@ -426,6 +473,7 @@ class Box
         SetJointAttribute();
         SetBodyAttribute();
     }
+
     private void addJoint(Vector3 anchor, Rigidbody connectedBody)
     {
         var cj = configurableJoint = gameObject.AddComponent<ConfigurableJoint>();
