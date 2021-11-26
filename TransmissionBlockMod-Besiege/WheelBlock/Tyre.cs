@@ -18,8 +18,6 @@ public class Tyre : MonoBehaviour
     public Transform parent;
     public Rigidbody connectedBody;
 
-    public TyreBox tyreBox;
-
     public void CreateBoxes(float angle, float radius = 1.5f, float offset_forward = 0.5f)
     {
         this.Radius = radius;
@@ -50,9 +48,7 @@ public class Tyre : MonoBehaviour
             }
         }
 
-        tyreBox = new TyreBox();
-
-        GameObject createBox(float _angle, float _radius,float _offset_forward)
+        GameObject createBox(float _angle, float _radius, float _offset_forward)
         {
             var box = new GameObject("box");
             var _parent = tyre.transform;
@@ -110,8 +106,6 @@ public class Tyre : MonoBehaviour
             cj.xMotion = ConfigurableJointMotion.Limited;
             cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
         }
-
-        tyreBox.test();
     }
 
     public void SetStroke(float stroke = 0.25f)
@@ -131,7 +125,7 @@ public class Tyre : MonoBehaviour
             var distance = Vector3.Distance(box.transform.position, parent.position);
             var vector = new Vector3(single * distance, single * distance, 1f);
             //cj.connectedAnchor = Vector3.Scale(vector, connectedAnchor);
-            cj.connectedAnchor =connectedAnchor;
+            cj.connectedAnchor = connectedAnchor;
 
             //stroke
             //set linear limit
@@ -144,26 +138,6 @@ public class Tyre : MonoBehaviour
             cj.linearLimit = softJointLimit;
             cj.targetPosition = new Vector3(_stroke, 0f, 0f);
         }
-    }
-    public class TyreBox
-    {
-        public GameObject gameObject;
-
-
-        public TyreBox()
-        {
-            gameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-
-
-        }
-
-
-        public void test()
-        {
-            Debug.Log(gameObject.transform.position + "-??");
-
-        }
-
     }
 }
 
