@@ -5,25 +5,28 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 
-class Tyre : MonoBehaviour
+public class Tyre : MonoBehaviour
 {
+    public bool Suspension { get; set; } = false;
     public float Radius { get; private set; }
     public float Stroke { get; set; } = 0.25f;
 
-    private static ModMesh mesh;
+    private static ModMesh mesh = mesh ?? ModResource.GetMesh("wheel-obj");
 
     private GameObject tyre;
-    private GameObject[] boxes;
-    private Transform parent;
-    private Rigidbody connectedBody;
+    public GameObject[] boxes;
+    public Transform parent;
+    public Rigidbody connectedBody;
+
+    public TyreBox tyreBox;
 
     public void CreateBoxes(float angle, float radius = 1.5f, float offset_forward = 0.5f)
     {
         this.Radius = radius;
-        this.parent = transform.parent;
+        this.parent = transform;
         this.connectedBody = gameObject.GetComponent<Rigidbody>();
 
-        tyre = new GameObject("Boxes");
+        tyre = new GameObject("Tyre");
         tyre.transform.SetParent(parent);
         tyre.transform.position = parent.position;
         tyre.transform.rotation = parent.rotation;
@@ -34,7 +37,6 @@ class Tyre : MonoBehaviour
         //外圈box位置
         for (var i = 0; i < index; i++)
         {
-            // boxes[i] = new Box(tyre.transform, connectedBody, angle * i, offset_forward, Radius, Stroke);
             boxes[i] = createBox(angle * i, radius, offset_forward);
         }
 
@@ -47,6 +49,8 @@ class Tyre : MonoBehaviour
                 Physics.IgnoreCollision(mc, mc1);
             }
         }
+
+        tyreBox = new TyreBox();
 
         GameObject createBox(float _angle, float _radius,float _offset_forward)
         {
@@ -69,7 +73,7 @@ class Tyre : MonoBehaviour
 
             var mf = box.AddComponent<MeshFilter>() ?? box.GetComponent<MeshFilter>();
             var mc = box.AddComponent<MeshCollider>() ?? box.GetComponent<MeshCollider>();
-            mf.mesh = mc.sharedMesh = mesh = mesh ?? ModResource.GetMesh("wheel-obj");
+            mf.mesh = mc.sharedMesh = mesh;
             mc.convex = true;
 #if DEBUG
             var mr = box.AddComponent<MeshRenderer>() ?? box.GetComponent<MeshRenderer>();
@@ -80,5 +84,88 @@ class Tyre : MonoBehaviour
         }
     }
 
+    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
+    {
+        foreach (var box in boxes)
+        {
+            var mc = box.GetComponent<MeshCollider>();
+            mc.material.bounciness = bounciness;
+            mc.material.staticFriction = staticFriction;
+            mc.material.dynamicFriction = dynamicFriction;
+            mc.material.frictionCombine = frictionCombine;
+            mc.material.bounceCombine = bounceCombine;
+        }
+    }
+
+    public void AddJoint()
+    {
+        foreach (var box in boxes)
+        {
+            var cj = box.AddComponent<ConfigurableJoint>();
+            cj.autoConfigureConnectedAnchor = false;
+            cj.connectedBody = connectedBody;
+            cj.enablePreprocessing = false;
+            cj.anchor = Vector3.zero;
+            cj.axis = Vector3.forward;
+            cj.xMotion = ConfigurableJointMotion.Limited;
+            cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
+        }
+
+        tyreBox.test();
+    }
+
+    public void SetStroke(float stroke = 0.25f)
+    {
+        Stroke = stroke;
+
+        foreach (var box in boxes)
+        {
+            //radius
+            //set connected anchor
+            var cj = box.GetComponent<ConfigurableJoint>();
+            var radius = Radius;
+            var connectedAnchor = parent.InverseTransformDirection(box.transform.position - parent.position);
+            Debug.Log(connectedAnchor);
+            var single = 1f - (stroke * 0.5f) / radius;
+            //var single1 = 1f / parent.localScale.z;
+            var distance = Vector3.Distance(box.transform.position, parent.position);
+            var vector = new Vector3(single * distance, single * distance, 1f);
+            //cj.connectedAnchor = Vector3.Scale(vector, connectedAnchor);
+            cj.connectedAnchor =connectedAnchor;
+
+            //stroke
+            //set linear limit
+            var _stroke = stroke;
+            _stroke = _stroke * 0.5f;
+
+            var softJointLimit = cj.linearLimit;
+            softJointLimit.limit = _stroke;
+            softJointLimit.contactDistance = _stroke;
+            cj.linearLimit = softJointLimit;
+            cj.targetPosition = new Vector3(_stroke, 0f, 0f);
+        }
+    }
+    public class TyreBox
+    {
+        public GameObject gameObject;
+
+
+        public TyreBox()
+        {
+            gameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+
+        }
+
+
+        public void test()
+        {
+            Debug.Log(gameObject.transform.position + "-??");
+
+        }
+
+    }
 }
+
+
 

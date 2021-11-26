@@ -54,7 +54,7 @@ class WheelBlockScript : BlockScript
         CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
 
         //Boxes = gameObject.AddComponent<Boxes>();
-        Tyre = gameObject.AddComponent<Tyre>();
+        Tyre = GetComponent<Tyre>() ?? gameObject.AddComponent<Tyre>();
     }
 
     public override void OnBlockPlaced()
@@ -62,7 +62,7 @@ class WheelBlockScript : BlockScript
         //Destroy(transform.FindChild("Boxes")?.gameObject);
         //Boxes = new Boxes(transform, Rigidbody);
         //Boxes.CreateBoxes(18f, 0.5f);
-        Tyre.CreateBoxes(18f);
+        Tyre.CreateBoxes(120f);
     }
 
     //private event Action<Vector3,Vector3> onScale;
@@ -109,6 +109,15 @@ class WheelBlockScript : BlockScript
 
         //addDynamicAxis();
 
+        //foreach (var box in Tyre.boxes)
+        //{
+        //    var parent = box.transform.parent;
+        //    Debug.Log(parent.InverseTransformDirection(box.transform.position - parent.position));
+        //}
+
+        Tyre.AddJoint();
+        Tyre.SetStroke();
+       
         //foreach (var box in Boxes.boxes)
         //{
         //    var index = Boxes.boxes.ToList().IndexOf(box);
