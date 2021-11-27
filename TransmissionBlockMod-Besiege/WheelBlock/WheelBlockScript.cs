@@ -56,7 +56,6 @@ class WheelBlockScript : BlockScript
         tyre.CreateBoxes(18f);
     }
 
-    GameObject[] gos = new GameObject[50];
     public override void OnSimulateStart()
     {
         Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
