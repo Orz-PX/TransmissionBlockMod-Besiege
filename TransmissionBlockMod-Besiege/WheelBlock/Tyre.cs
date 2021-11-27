@@ -366,7 +366,7 @@ public class Box :MonoBehaviour
         //rb.collisionDetectionMode = collisionDetectionMode;
 
         RefreshCenterOfMass(1f);
-#if DEBUG //render center of mass
+#if COM //render center of mass
         var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         var parent = gameObject.transform;
         go.transform.SetParent(parent);
