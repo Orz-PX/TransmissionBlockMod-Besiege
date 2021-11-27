@@ -53,7 +53,10 @@ class WheelBlockScript : BlockScript
 
     public override void OnBlockPlaced()
     {
+        var lastscale = transform.localScale;
+        BlockBehaviour.SetScale(Vector3.one);
         tyre.CreateBoxes(18f);
+        BlockBehaviour.SetScale(lastscale);
     }
 
     public override void OnSimulateStart()
