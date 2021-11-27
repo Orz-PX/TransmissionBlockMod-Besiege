@@ -12,7 +12,10 @@ class WheelBlockScript : BlockScript
 {
 
     private MKey forwardKey, backwardKey;
-    private MSlider speedSlider, springSlider, damperSlider, acceleratedSlider, staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider, massSlider;
+    private MSlider massSlider;
+    private MSlider speedSlider, acceleratedSlider;
+    private MSlider springSlider, damperSlider;
+    private MSlider staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider;
     private MToggle ignoreBaseColliderToggle, toggleToggle;
     private float springMultiplier = 500f;
     private float damperMultiplier = 10f;

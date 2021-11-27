@@ -33,14 +33,14 @@ public class WheelMotorControllerHinge : MonoBehaviour
     private MSlider accSlider;
     private Rigidbody rigidbody;
     private float lastVelocity;
-    private bool forwardPressed;
-    private bool backwardPressed;
-    private bool forwardHeld;
-    private bool backwardHeld;
-    private bool emuForwardPressed;
-    private bool emuBackwardPressed;
-    private bool emuForwardHeld;
-    private bool emuBackwardHeld;
+    //private bool forwardPressed;
+    //private bool backwardPressed;
+    //private bool forwardHeld;
+    //private bool backwardHeld;
+    //private bool emuForwardPressed;
+    //private bool emuBackwardPressed;
+    //private bool emuForwardHeld;
+    //private bool emuBackwardHeld;
 
     public MSlider AccelerationSlider { get { return this.accSlider; } }
     public MToggle AutoBreakToggle { get { return this.autoBreakMode; } }
@@ -148,15 +148,11 @@ public class WheelMotorControllerHinge : MonoBehaviour
     }
     public void UpdateBlock()
     {
-        if (this.allowControl)
+        if (allowControl)
         {
-            this.forwardPressed = this.forwardKey.IsPressed;
-            this.backwardPressed = this.backwardKey.IsPressed;
-            this.forwardHeld = this.forwardKey.IsHeld;
-            this.backwardHeld = this.backwardKey.IsHeld;
-            this.CheckKeys(this.forwardPressed, this.backwardPressed, this.forwardHeld, this.backwardHeld, this.forwardKey.Value, -this.backwardKey.Value, this.emuForwardHeld, this.emuBackwardHeld);
+            CheckKeys(forwardKey.IsPressed, backwardKey.IsPressed, forwardKey.IsHeld, backwardKey.IsHeld, forwardKey.Value, -backwardKey.Value, forwardKey.EmulationHeld(true), backwardKey.EmulationHeld(true));
         }
-        else if (this.myJoint == null || !this.noRigidbody && this.Rigidbody.isKinematic && this.myJoint.connectedBody && this.myJoint.connectedBody.isKinematic)
+        else if (myJoint == null || !noRigidbody && Rigidbody.isKinematic && myJoint.connectedBody && myJoint.connectedBody.isKinematic)
         {
             this.input = 0f;
         }
@@ -167,13 +163,9 @@ public class WheelMotorControllerHinge : MonoBehaviour
     }
     public void EmulationUpdateBlock()
     {
-        if (this.allowControl)
+        if (allowControl)
         {
-            this.emuForwardPressed = this.forwardKey.EmulationPressed();
-            this.emuBackwardPressed = this.backwardKey.EmulationPressed();
-            this.emuForwardHeld = this.forwardKey.EmulationHeld(true);
-            this.emuBackwardHeld = this.backwardKey.EmulationHeld(true);
-            this.CheckKeys(this.emuForwardPressed, this.emuBackwardPressed, this.emuForwardHeld, this.emuBackwardHeld, 1f, -1f, this.forwardHeld, this.backwardHeld);
+            CheckKeys(forwardKey.EmulationPressed(), backwardKey.EmulationPressed(), forwardKey.EmulationHeld(true), backwardKey.EmulationHeld(true), 1f, -1f, forwardKey.IsHeld, backwardKey.IsHeld);
         }
     }
     float single = 0f, single1 = 0f;

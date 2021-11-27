@@ -41,7 +41,7 @@ public class Tyre : MonoBehaviour
         for (var i = 0; i < index; i++)
         {
             var box = boxes[i] = new GameObject("box" + i).AddComponent<Box>();
-            box.transform.SetParent(transform);
+            box.transform.SetParent(tyre.transform);
             box.CreateBox(angle * i, radius, offset_forward);
         }
 
@@ -94,29 +94,6 @@ public class Tyre : MonoBehaviour
 
         foreach (var box in boxes)
         {
-            //var i = boxes.ToList().IndexOf(box);
-
-            //radius
-            //set connected anchor
-            //var cj = box.GetComponent<ConfigurableJoint>();
-            //var radius = Radius;
-            //var connectedAnchor = connectedAnchors[i];
-            //var single = 1f - (stroke * 0.5f) / radius;
-            //var distance = connectedAnchor.magnitude;
-            //var vector = new Vector3(single * distance, single * distance, 1f);
-            //cj.connectedAnchor = connectedAnchor;
-
-            //stroke
-            //set linear limit
-            //var _stroke = stroke;
-            //_stroke = _stroke * 0.5f;
-
-            //var softJointLimit = cj.linearLimit;
-            //softJointLimit.limit = _stroke;
-            //softJointLimit.contactDistance = _stroke;
-            //cj.linearLimit = softJointLimit;
-            //cj.targetPosition = new Vector3(_stroke, 0f, 0f);
-
             box.SetStroke(stroke);
         }
     }
@@ -201,10 +178,11 @@ public class Tyre : MonoBehaviour
 
 public class Box :MonoBehaviour
 {
-    private ConfigurableJoint configurableJoint;
     private static ModMesh mesh = mesh ?? ModResource.GetMesh("wheel-obj");
     public float Stroke { get; private set; }
     public float Radius { get; private set; }
+    [SerializeField]
+    private ConfigurableJoint configurableJoint;
     [SerializeField]
     private Vector3 connectedAnchor;
 
@@ -238,14 +216,13 @@ public class Box :MonoBehaviour
     }
     public void AddJoint()
     {
-        addjoint(connectedAnchor, transform.parent.GetComponent<Rigidbody>());
+        addjoint( transform.parent.parent.GetComponent<Rigidbody>());
         SetJointAttribute();
 
-        void addjoint(Vector3 connectedAnchor, Rigidbody connectedBody)
+        void addjoint(Rigidbody connectedBody)
         {
             var cj = configurableJoint = gameObject.AddComponent<ConfigurableJoint>();
             cj.autoConfigureConnectedAnchor = false;
-            //cj.connectedAnchor = connectedAnchor;
             cj.connectedBody = connectedBody;
             cj.enablePreprocessing = false;
             cj.anchor = Vector3.zero;
@@ -259,12 +236,10 @@ public class Box :MonoBehaviour
         //radius
         //set connected anchor
         var cj = GetComponent<ConfigurableJoint>();
-        var radius = Radius;
-        //var connectedAnchor = connectedAnchor;
-        var single = 1f - (stroke * 0.5f) / radius;
-        var distance = connectedAnchor.magnitude;
-        var vector = new Vector3(single * distance, single * distance, 1f);
-        cj.connectedAnchor = connectedAnchor;
+        var vector = new Vector2(connectedAnchor.x, connectedAnchor.y);
+        vector = Vector2.ClampMagnitude(vector, connectedAnchor.magnitude - stroke);
+        var vector1 = new Vector3(vector.x, vector.y, connectedAnchor.z);
+        cj.connectedAnchor = vector1;
 
         //stroke
         //set linear limit
