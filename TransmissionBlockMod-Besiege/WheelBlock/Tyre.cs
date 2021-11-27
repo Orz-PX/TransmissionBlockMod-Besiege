@@ -20,7 +20,9 @@ public class Tyre : MonoBehaviour
     [SerializeField]
     private Rigidbody connectedBody;
     [SerializeField]
-    MeshFilter meshFilter;
+    private MeshFilter meshFilter;
+    [SerializeField]
+    private MeshRenderer meshRenderer;
     public void CreateBoxes(float angle, float radius = 1.5f, float offset_forward = 0.5f)
     {
         this.Radius = radius;
@@ -42,6 +44,10 @@ public class Tyre : MonoBehaviour
             box.transform.SetParent(transform);
             box.CreateBox(angle * i, radius, offset_forward);
         }
+
+        meshFilter = gameObject.AddComponent<MeshFilter>();
+        meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        meshRenderer.material.color = Color.green;
     }
     public void Setup(float spring,float damper,float maximumForce,float bounciness,float staticFriction,float dynamicFriction,float mass)
     {
