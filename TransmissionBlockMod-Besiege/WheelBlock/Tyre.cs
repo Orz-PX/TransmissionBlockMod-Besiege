@@ -14,7 +14,7 @@ public class Tyre : MonoBehaviour
     [SerializeField]
     private GameObject tyre;
     [SerializeField]
-    private Box[] boxes;
+    private TyreCollider[] boxes;
     [SerializeField]
     private Transform parent;
     [SerializeField]
@@ -36,11 +36,11 @@ public class Tyre : MonoBehaviour
 
         int index = (int)(360f / angle);
 
-        boxes = new Box[index];
+        boxes = new TyreCollider[index];
         //外圈box位置
         for (var i = 0; i < index; i++)
         {
-            var box = boxes[i] = new GameObject("box" + i).AddComponent<Box>();
+            var box = boxes[i] = new GameObject("Tyre Collider " + i).AddComponent<TyreCollider>();
             box.transform.SetParent(tyre.transform);
             box.CreateBox(angle * i, radius, offset_forward);
         }
@@ -176,7 +176,7 @@ public class Tyre : MonoBehaviour
 }
 
 
-public class Box :MonoBehaviour
+public class TyreCollider :MonoBehaviour
 {
     private static ModMesh mesh = mesh ?? ModResource.GetMesh("wheel-obj");
     public float Stroke { get; private set; }
@@ -213,6 +213,7 @@ public class Box :MonoBehaviour
 #endif
 
         this.connectedAnchor = parent.InverseTransformDirection(transform.position - parent.position);
+
     }
     public void AddJoint()
     {
