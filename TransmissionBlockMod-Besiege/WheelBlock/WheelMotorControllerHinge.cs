@@ -33,6 +33,9 @@ public class WheelMotorControllerHinge : MonoBehaviour
     private MSlider accSlider;
     private Rigidbody rigidbody;
     private float lastVelocity;
+    private float deltaMultiplier;
+    private bool hasStarted = false;
+    private bool forceReset;
 
     public MSlider AccelerationSlider { get { return accSlider; } }
     public MToggle AutoBreakToggle { get { return autoBreakMode; } }
@@ -46,18 +49,18 @@ public class WheelMotorControllerHinge : MonoBehaviour
 
     public void Setup(MKey forwardKey, MKey backwardKey, MSlider speedSlider, MSlider accSlider, MToggle automaticToggle, MToggle toggleMode, MToggle autoBreakMode, Rigidbody rigidbody, ConfigurableJoint configurableJoint)
     {
-        //forwardKey = forwardKey;
-        //backwardKey = backwardKey;
-        //speedSlider = speedSlider;
-        //accSlider = accSlider;
-        //automaticToggle = automaticToggle;
-        //toggleMode = toggleMode;
-        //autoBreakMode = autoBreakMode;
-        //rigidbody = rigidbody;
-        noRigidbody = Rigidbody != null;
+        this.forwardKey = forwardKey;
+        this.backwardKey = backwardKey;
+        this.speedSlider = speedSlider;
+        this.accSlider = accSlider;
+        this.automaticToggle = automaticToggle;
+        this.toggleMode = toggleMode;
+        this.autoBreakMode = autoBreakMode;
+        this.rigidbody = rigidbody;
+        noRigidbody = (Rigidbody != null);
 
-        Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
-        Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
+        //Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
+        //Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
         Rigidbody.solverVelocityIterations = 10;
         Rigidbody.solverIterations = 100;
@@ -71,9 +74,25 @@ public class WheelMotorControllerHinge : MonoBehaviour
         motor = myJoint.angularXDrive;
         //motor.maximumForce = 1000f;
         //myJoint.angularXDrive = motor;
+
+        setFalseOnStart();
+
+        void setFalseOnStart()
+        {
+            StartCoroutine(wait());
+            IEnumerator wait()
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    yield return 0;
+                }
+                myJoint.swapBodies = false;
+            }
+        }
     }
     protected void CheckKeys(bool forwardPress, bool backwardPress, bool forwardHeld, bool backwardHeld, float forwardVal, float backwardVal, bool altForwardHeld, bool altBackwardHeld)
     {
+    
         if (myJoint == null || !noRigidbody && Rigidbody.isKinematic && myJoint.connectedBody && myJoint.connectedBody.isKinematic)
         {
             input = 0f;
@@ -124,20 +143,6 @@ public class WheelMotorControllerHinge : MonoBehaviour
             }
         }
     }
-    public void setFalseOnStart()
-    {
-        Rigidbody.maxAngularVelocity = maxAngularVel * SpeedSlider.Value;
-
-        StartCoroutine(wait());
-        IEnumerator wait()
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                yield return 0;
-            }
-            myJoint.swapBodies = false;
-        }
-    }
     public void UpdateBlock()
     {
         if (allowControl)
@@ -153,14 +158,14 @@ public class WheelMotorControllerHinge : MonoBehaviour
             input = 1f;
         }
     }
-    public void EmulationUpdateBlock()
+    public void UpdateBlock_Emulation()
     {
         if (allowControl)
         {
             CheckKeys(forwardKey.EmulationPressed(), backwardKey.EmulationPressed(), forwardKey.EmulationHeld(true), backwardKey.EmulationHeld(true), 1f, -1f, forwardKey.IsHeld, backwardKey.IsHeld);
         }
     }
-    float single = 0f, single1 = 0f;
+    //float single = 0f, single1 = 0f;
     public void FixedUpdateBlock(bool flipped)
     {
         //if (myJoint == null || myJoint.connectedBody == null)
@@ -190,76 +195,79 @@ public class WheelMotorControllerHinge : MonoBehaviour
         //}
 
 
-        if (!this.hasStarted)
+        if (!hasStarted)
         {
-            if (!this.noRigidbody)
+            if (!noRigidbody)
             {
-                this.Rigidbody.maxAngularVelocity = this.maxAngularVel;
+                Rigidbody.maxAngularVelocity = maxAngularVel;
             }
-            this.deltaMultiplier = this.degreesPerSecond * 80f * (float)(-(float)this.FlipInvert);
-            this.hasStarted = true;
+            deltaMultiplier = degreesPerSecond * 80f * -(float)((!flipped) ? -1f : 1f);
+            hasStarted = true;
         }
-        if (this.myJoint == null || this.myJoint.connectedBody == null)
+        if (myJoint == null || myJoint.connectedBody == null)
         {
             return;
         }
-        this.Velocity = this.input * this.speedSlider.Value;
-        if (this.input == 0f)
+        Velocity = input * speedSlider.Value;
+        if (input == 0f)
         {
-            this.motor.force = float.PositiveInfinity;
-            this.forceReset = true;
+            motor.maximumForce = float.PositiveInfinity;
+            forceReset = true;
         }
         else
         {
-            if (this.motor.force == float.PositiveInfinity && this.forceReset)
+            if (motor.maximumForce == float.PositiveInfinity && forceReset)
             {
-                this.motor.force = this.accSlider.Value;
-                this.forceReset = false;
+                motor.maximumForce = accSlider.Value;
+                forceReset = false;
             }
-            if (this.motor.force != float.PositiveInfinity && !this.forceReset)
+            if (motor.maximumForce != float.PositiveInfinity && !forceReset)
             {
-                this.motor.force = this.motor.force + this.accSlider.Value * Time.deltaTime * 10f;
-                if (this.motor.force > this.accInfinity)
+                motor.maximumForce += accSlider.Value * Time.deltaTime * 10f;
+                if (motor.maximumForce > accInfinity)
                 {
-                    this.motor.force = float.PositiveInfinity;
+                    motor.maximumForce = float.PositiveInfinity;
                 }
-                this.myJoint.motor = this.motor;
+                myJoint.angularXDrive = motor;
             }
         }
-        if (!this.isUsingMotor)
-        {
-            this.myJoint.useMotor = true;
-            this.isUsingMotor = true;
-        }
-        float num = this.Velocity * this.deltaMultiplier;
-        float num2 = this.lastVelocity + (num - this.lastVelocity) * Time.deltaTime * this.speedLerpSmooth;
-        if (this.allowControl && !this.autoBreakMode.IsActive && ((this.input >= 0f) ? this.input : (-this.input)) < 0.05f)
+        //if (!isUsingMotor)
+        //{
+        //    myJoint.angularXMotion = ConfigurableJointMotion.Free;
+        //    isUsingMotor = true;
+        //}
+        float num = Velocity * deltaMultiplier;
+        float num2 = lastVelocity + (num - lastVelocity) * Time.deltaTime * speedLerpSmooth;
+    
+        if (allowControl && !autoBreakMode.IsActive && ((input >= 0f) ? input : (-input)) < 0.05f)
         {
             float num3 = 0.01f;
-            if (this.lastVelocity > 0f)
+            if (lastVelocity > 0f)
             {
                 num2 = ((num2 <= num3) ? num2 : num3);
             }
-            else if (this.lastVelocity < 0f)
+            else if (lastVelocity < 0f)
             {
                 num2 = ((num2 <= -num3) ? (-num3) : num2);
             }
         }
-        float num4 = num2 - this.lastVelocity;
+        float num4 = num2 - lastVelocity;
         if (((num4 >= 0f) ? num4 : (-num4)) > Mathf.Epsilon)
         {
-            if (!this.noRigidbody && this.Rigidbody.IsSleeping())
+            if (!noRigidbody && Rigidbody.IsSleeping())
             {
-                this.Rigidbody.WakeUp();
+                Rigidbody.WakeUp();
             }
-            if (this.myJoint.connectedBody.IsSleeping())
+            if (myJoint.connectedBody.IsSleeping())
             {
-                this.myJoint.connectedBody.WakeUp();
+                myJoint.connectedBody.WakeUp();
             }
-            this.motor.targetVelocity = num2;
-            this.lastVelocity = num2;
-            this.myJoint.motor = this.motor;
+            //motor.targetVelocity = num2;
+            //Rigidbody.AddRelativeTorque(Vector3.forward * num2, ForceMode.VelocityChange);
+            lastVelocity = num2;
+            myJoint.angularXDrive = motor;
         }
+        Rigidbody.AddRelativeTorque(Vector3.forward * num2 * 50f, ForceMode.VelocityChange);
     }
 
     private void OnDestroy()
