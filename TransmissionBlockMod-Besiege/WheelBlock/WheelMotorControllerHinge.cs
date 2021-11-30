@@ -57,7 +57,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
         this.toggleMode = toggleMode;
         this.autoBreakMode = autoBreakMode;
         this.rigidbody = rigidbody;
-        noRigidbody = (Rigidbody != null);
+        noRigidbody = (Rigidbody == null);
 
         //Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         //Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
@@ -199,9 +199,9 @@ public class WheelMotorControllerHinge : MonoBehaviour
         {
             if (!noRigidbody)
             {
-                Rigidbody.maxAngularVelocity = maxAngularVel;
+                Rigidbody.maxAngularVelocity = maxAngularVel /** speedSlider.Value*/;
             }
-            deltaMultiplier = degreesPerSecond * 80f * -(float)((!flipped) ? -1f : 1f);
+            deltaMultiplier = degreesPerSecond * 80f * -(float)((!flipped) ? -1f : 1f) * 0.05f;
             hasStarted = true;
         }
         if (myJoint == null || myJoint.connectedBody == null)
@@ -267,7 +267,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
             lastVelocity = num2;
             myJoint.angularXDrive = motor;
         }
-        Rigidbody.AddRelativeTorque(Vector3.forward * num2 * 50f, ForceMode.VelocityChange);
+        Rigidbody.AddRelativeTorque(Vector3.forward * num2, ForceMode.VelocityChange);
     }
 
     private void OnDestroy()

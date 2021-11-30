@@ -68,7 +68,7 @@ class WheelBlockScript : BlockScript
     public override void OnSimulateStart()
     {
         //Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
-
+      
         var mass = massSlider.Value;
         var spring = springSlider.Value * springMultiplier;
         var damper = damperSlider.Value * damperMultiplier;
@@ -112,7 +112,7 @@ class WheelBlockScript : BlockScript
         base.SimulateUpdateAlways();
         wheelMotor.UpdateBlock();
     }
-    float input = 0f, single = 0f, single1 = 0f;
+    //float input = 0f, single = 0f, single1 = 0f;
     public override void SimulateFixedUpdateAlways()
     {
         //if (CJ == null || CJ?.connectedBody == null) return;

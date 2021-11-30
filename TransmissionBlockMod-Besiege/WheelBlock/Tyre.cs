@@ -205,8 +205,11 @@ public class TyreCollider :MonoBehaviour
 
         var mf = GetComponent<MeshFilter>() ?? gameObject.AddComponent<MeshFilter>();
         var mc = GetComponent<MeshCollider>() ?? gameObject.AddComponent<MeshCollider>();
+        var bb = parent.parent.GetComponent<BlockBehaviour>();
+        bb.myBounds.childColliders.Add(mc);
         mf.mesh = mc.sharedMesh = mesh;
         mc.convex = true;
+     
 #if DEBUG
         var mr = GetComponent<MeshRenderer>() ?? gameObject.AddComponent<MeshRenderer>();
         mr.material.color = Color.red;
