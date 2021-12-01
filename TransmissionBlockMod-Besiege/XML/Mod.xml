@@ -9,7 +9,7 @@
 	<Name>Transmission Block Mod</Name>
 	<Author>XultimateX</Author> <!-- FIX: Insert your name here. -->
 	<!-- Major.Minor.Build -->
-	<Version>0.9.48</Version>
+	<Version>0.9.49</Version>
 	
 	<Description>
 A newly created mod. <!-- FIX: Insert a short description here. -->
@@ -125,7 +125,7 @@ A newly created mod. <!-- FIX: Insert a short description here. -->
 		<!-- <Texture name="some-texture-name" path="some_texture_file.png" /> -->
     <Mesh name ="main-obj" path ="TransmissionBlock\cylinder.obj"/>
 	<Mesh name ="wheel-obj" path ="WheelBlock\_model1.obj"/>
-	<Mesh name ="hswheel-obj" path ="WheelBlock\_model3.obj"/>
+	<Mesh name ="hswheel-obj" path ="WheelBlock\_model4.obj"/>
     <Texture name="main-tex" path="TransmissionBlock\cylinder.png"/>
    <Texture name="Icon" path="Icon.png"/>
 	</Resources>

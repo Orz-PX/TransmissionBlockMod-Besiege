@@ -10,6 +10,7 @@ public class Tyre : MonoBehaviour
     public bool Suspension { get; set; } = false;
     public float Radius { get; private set; }
     public float Stroke { get; set; } = 0.25f;
+    public TyreCollider.TyreType TyreType { get; private set; }
 
     [SerializeField]
     private GameObject tyre;
@@ -23,10 +24,11 @@ public class Tyre : MonoBehaviour
     private MeshFilter meshFilter;
     [SerializeField]
     private MeshRenderer meshRenderer;
-    public void CreateBoxes(float angle, float radius = 1.5f, float offset_forward = 0.5f)
+    public void CreateBoxes(float angle, TyreCollider.TyreType tyreType = TyreCollider.TyreType.Vanilla, float radius = 1.5f, float offset_forward = 0.5f)
     {
         this.Radius = radius;
         this.parent = transform;
+        this.TyreType = tyreType;
         this.connectedBody = gameObject.GetComponent<Rigidbody>();
 
         tyre = new GameObject("Tyre");
@@ -42,7 +44,7 @@ public class Tyre : MonoBehaviour
         {
             var box = boxes[i] = new GameObject("Tyre Collider " + i).AddComponent<TyreCollider>();
             box.transform.SetParent(tyre.transform);
-            box.CreateBox(angle * i, radius, offset_forward);
+            box.CreateBox(angle * i, radius, offset_forward, tyreType);
         }
 
         meshFilter = gameObject.AddComponent<MeshFilter>();
@@ -178,7 +180,8 @@ public class Tyre : MonoBehaviour
 
 public class TyreCollider :MonoBehaviour
 {
-    private static ModMesh mesh = mesh ?? ModResource.GetMesh("wheel-obj");
+    private static ModMesh wheelMesh = wheelMesh ?? ModResource.GetMesh("wheel-obj");
+    private static ModMesh hswheelMesh = hswheelMesh ?? ModResource.GetMesh("hswheel-obj");
     public float Stroke { get; private set; }
     public float Radius { get; private set; }
     [SerializeField]
@@ -186,7 +189,13 @@ public class TyreCollider :MonoBehaviour
     [SerializeField]
     private Vector3 connectedAnchor;
 
-    public void CreateBox(float angle, float radius, float offset_forward)
+    public enum TyreType
+    {
+        Vanilla = 0,
+        HighSpeed = 1,
+    }
+
+    public void CreateBox(float angle, float radius, float offset_forward,TyreType tyreType = TyreType.Vanilla)
     {
         var parent = transform.parent;
 
@@ -207,7 +216,7 @@ public class TyreCollider :MonoBehaviour
         var mc = GetComponent<MeshCollider>() ?? gameObject.AddComponent<MeshCollider>();
         var bb = parent.parent.GetComponent<BlockBehaviour>();
         bb.myBounds.childColliders.Add(mc);
-        mf.mesh = mc.sharedMesh = mesh;
+        mf.mesh = mc.sharedMesh = tyreType == TyreType.Vanilla ? wheelMesh : hswheelMesh;
         mc.convex = true;
      
 #if DEBUG
