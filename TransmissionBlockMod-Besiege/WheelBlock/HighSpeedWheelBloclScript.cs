@@ -82,7 +82,7 @@ class HighSpeedWheelBloclScript : BlockScript
         HighWheel.SetPhysicMaterail(bouncinessSlider.Value, staticFrictionSlider.Value, dynamicFrictionSlider.Value);
         HighWheel.SetBodyAttribute(massSlider.Value);
 
-        WheelMotor.setFalseOnStart();
+        //WheelMotor.setFalseOnStart();
 
         StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
         //addDynamicAxis();
@@ -166,7 +166,7 @@ class HighSpeedWheelBloclScript : BlockScript
     public override void KeyEmulationUpdate()
     {
         base.KeyEmulationUpdate();
-        WheelMotor.EmulationUpdateBlock();
+        WheelMotor.UpdateBlock_Emulation();
     }
 }
 class HighWheel

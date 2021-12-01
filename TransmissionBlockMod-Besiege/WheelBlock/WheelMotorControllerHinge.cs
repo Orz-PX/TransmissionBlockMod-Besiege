@@ -33,23 +33,18 @@ public class WheelMotorControllerHinge : MonoBehaviour
     private MSlider accSlider;
     private Rigidbody rigidbody;
     private float lastVelocity;
-    private bool forwardPressed;
-    private bool backwardPressed;
-    private bool forwardHeld;
-    private bool backwardHeld;
-    private bool emuForwardPressed;
-    private bool emuBackwardPressed;
-    private bool emuForwardHeld;
-    private bool emuBackwardHeld;
+    private float deltaMultiplier;
+    private bool hasStarted = false;
+    private bool forceReset;
 
-    public MSlider AccelerationSlider { get { return this.accSlider; } }
-    public MToggle AutoBreakToggle { get { return this.autoBreakMode; } }
-    public MToggle AutomaticToggle { get { return this.automaticToggle; } }
-    public MKey BackwardKey { get { return this.backwardKey; } }
-    public MKey ForwardKey { get { return this.forwardKey; } }
-    public float Input { get { return this.input; } set { this.input = value; } }
-    public MSlider SpeedSlider { get { return this.speedSlider; } }
-    public MToggle ToggleModeToggle { get { return this.toggleMode; } }
+    public MSlider AccelerationSlider { get { return accSlider; } }
+    public MToggle AutoBreakToggle { get { return autoBreakMode; } }
+    public MToggle AutomaticToggle { get { return automaticToggle; } }
+    public MKey BackwardKey { get { return backwardKey; } }
+    public MKey ForwardKey { get { return forwardKey; } }
+    public float Input { get { return input; } set { input = value; } }
+    public MSlider SpeedSlider { get { return speedSlider; } }
+    public MToggle ToggleModeToggle { get { return toggleMode; } }
     public Rigidbody Rigidbody { get { return rigidbody; } }
 
     public void Setup(MKey forwardKey, MKey backwardKey, MSlider speedSlider, MSlider accSlider, MToggle automaticToggle, MToggle toggleMode, MToggle autoBreakMode, Rigidbody rigidbody, ConfigurableJoint configurableJoint)
@@ -62,10 +57,10 @@ public class WheelMotorControllerHinge : MonoBehaviour
         this.toggleMode = toggleMode;
         this.autoBreakMode = autoBreakMode;
         this.rigidbody = rigidbody;
-        this.noRigidbody = this.Rigidbody != null;
+        noRigidbody = (Rigidbody == null);
 
-        Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
-        Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
+        //Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
+        //Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
         Rigidbody.solverVelocityIterations = 10;
         Rigidbody.solverIterations = 100;
@@ -79,136 +74,205 @@ public class WheelMotorControllerHinge : MonoBehaviour
         motor = myJoint.angularXDrive;
         //motor.maximumForce = 1000f;
         //myJoint.angularXDrive = motor;
+
+        setFalseOnStart();
+
+        void setFalseOnStart()
+        {
+            StartCoroutine(wait());
+            IEnumerator wait()
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    yield return 0;
+                }
+                myJoint.swapBodies = false;
+            }
+        }
     }
     protected void CheckKeys(bool forwardPress, bool backwardPress, bool forwardHeld, bool backwardHeld, float forwardVal, float backwardVal, bool altForwardHeld, bool altBackwardHeld)
     {
-        if (this.myJoint == null || !this.noRigidbody && this.Rigidbody.isKinematic && this.myJoint.connectedBody && this.myJoint.connectedBody.isKinematic)
+    
+        if (myJoint == null || !noRigidbody && Rigidbody.isKinematic && myJoint.connectedBody && myJoint.connectedBody.isKinematic)
         {
-            this.input = 0f;
+            input = 0f;
             return;
         }
-        if (this.automaticToggle.IsActive)
+        if (automaticToggle.IsActive)
         {
-            this.input = 1f;
+            input = 1f;
         }
-        else if (this.toggleMode.IsActive)
+        else if (toggleMode.IsActive)
         {
             if (forwardPress)
             {
-                if (this.input <= 0.9f)
+                if (input <= 0.9f)
                 {
-                    this.input = 1f;
+                    input = 1f;
                 }
                 else
                 {
-                    this.input = 0f;
+                    input = 0f;
                 }
             }
             if (backwardPress)
             {
-                if (this.input >= -0.9f)
+                if (input >= -0.9f)
                 {
-                    this.input = -1f;
+                    input = -1f;
                 }
                 else
                 {
-                    this.input = 0f;
+                    input = 0f;
                 }
             }
         }
         else if (forwardHeld)
         {
-            this.input = forwardVal;
+            input = forwardVal;
         }
         else if (!altForwardHeld)
         {
             if (backwardHeld)
             {
-                this.input = backwardVal;
+                input = backwardVal;
             }
             else if (!altBackwardHeld)
             {
-                this.input = 0f;
+                input = 0f;
             }
-        }
-    }
-    public void setFalseOnStart()
-    {
-        Rigidbody.maxAngularVelocity = maxAngularVel * SpeedSlider.Value;
-
-        StartCoroutine(wait());
-        IEnumerator wait()
-        {
-            for (int i = 0; i < 10; i++)
-            {
-                yield return 0;
-            }
-            myJoint.swapBodies = false;
         }
     }
     public void UpdateBlock()
     {
-        if (this.allowControl)
+        if (allowControl)
         {
-            this.forwardPressed = this.forwardKey.IsPressed;
-            this.backwardPressed = this.backwardKey.IsPressed;
-            this.forwardHeld = this.forwardKey.IsHeld;
-            this.backwardHeld = this.backwardKey.IsHeld;
-            this.CheckKeys(this.forwardPressed, this.backwardPressed, this.forwardHeld, this.backwardHeld, this.forwardKey.Value, -this.backwardKey.Value, this.emuForwardHeld, this.emuBackwardHeld);
+            CheckKeys(forwardKey.IsPressed, backwardKey.IsPressed, forwardKey.IsHeld, backwardKey.IsHeld, forwardKey.Value, -backwardKey.Value, forwardKey.EmulationHeld(true), backwardKey.EmulationHeld(true));
         }
-        else if (this.myJoint == null || !this.noRigidbody && this.Rigidbody.isKinematic && this.myJoint.connectedBody && this.myJoint.connectedBody.isKinematic)
+        else if (myJoint == null || !noRigidbody && Rigidbody.isKinematic && myJoint.connectedBody && myJoint.connectedBody.isKinematic)
         {
-            this.input = 0f;
+            input = 0f;
         }
         else
         {
-            this.input = 1f;
+            input = 1f;
         }
     }
-    public void EmulationUpdateBlock()
+    public void UpdateBlock_Emulation()
     {
-        if (this.allowControl)
+        if (allowControl)
         {
-            this.emuForwardPressed = this.forwardKey.EmulationPressed();
-            this.emuBackwardPressed = this.backwardKey.EmulationPressed();
-            this.emuForwardHeld = this.forwardKey.EmulationHeld(true);
-            this.emuBackwardHeld = this.backwardKey.EmulationHeld(true);
-            this.CheckKeys(this.emuForwardPressed, this.emuBackwardPressed, this.emuForwardHeld, this.emuBackwardHeld, 1f, -1f, this.forwardHeld, this.backwardHeld);
+            CheckKeys(forwardKey.EmulationPressed(), backwardKey.EmulationPressed(), forwardKey.EmulationHeld(true), backwardKey.EmulationHeld(true), 1f, -1f, forwardKey.IsHeld, backwardKey.IsHeld);
         }
     }
-    float single = 0f, single1 = 0f;
+    //float single = 0f, single1 = 0f;
     public void FixedUpdateBlock(bool flipped)
     {
-        if (this.myJoint == null || this.myJoint.connectedBody == null)
+        //if (myJoint == null || myJoint.connectedBody == null)
+        //{
+        //    return;
+        //}
+        //Velocity = input * speedSlider.Value * (flipped ? -1f : 1f);
+
+        //if (input == 0f)
+        //{
+        //    single = 0f;
+        //    if (autoBreakMode.IsActive)
+        //    {
+        //        single1 = Mathf.MoveTowards(single1, 1750f, 10f * Time.deltaTime);
+        //        motor.positionDamper = single1;
+        //        myJoint.angularXDrive = motor;
+        //    }
+        //}
+        //else
+        //{
+        //    single1 = 0f;
+        //    Rigidbody.WakeUp();
+        //    motor.positionDamper = 0f;
+        //    myJoint.angularXDrive = motor;
+        //    single = Mathf.MoveTowards(single, 17.5f, input == 0f ? 0f : accSlider.Value * Time.deltaTime * 10f);
+        //    Rigidbody.AddRelativeTorque(Vector3.forward * Velocity * single, ForceMode.VelocityChange);
+        //}
+
+
+        if (!hasStarted)
+        {
+            if (!noRigidbody)
+            {
+                Rigidbody.maxAngularVelocity = maxAngularVel /** speedSlider.Value*/;
+            }
+            deltaMultiplier = degreesPerSecond * 80f * -(float)((!flipped) ? -1f : 1f) * 0.05f;
+            hasStarted = true;
+        }
+        if (myJoint == null || myJoint.connectedBody == null)
         {
             return;
         }
-        this.Velocity = this.input * this.speedSlider.Value * (flipped ? -1f : 1f);
-
+        Velocity = input * speedSlider.Value;
         if (input == 0f)
         {
-            single = 0f;
-            if (autoBreakMode.IsActive)
-            {
-                single1 = Mathf.MoveTowards(single1, 1750f, 10f * Time.deltaTime);
-                motor.positionDamper = single1;
-                myJoint.angularXDrive = motor;
-            }
+            motor.maximumForce = float.PositiveInfinity;
+            forceReset = true;
         }
         else
         {
-            single1 = 0f;
-            Rigidbody.WakeUp();
-            motor.positionDamper = 0f;
-            myJoint.angularXDrive = motor;
-            single = Mathf.MoveTowards(single, 17.5f, input == 0f ? 0f : accSlider.Value * Time.deltaTime * 10f);
-            Rigidbody.AddRelativeTorque(Vector3.forward * Velocity * single, ForceMode.VelocityChange);
+            if (motor.maximumForce == float.PositiveInfinity && forceReset)
+            {
+                motor.maximumForce = accSlider.Value;
+                forceReset = false;
+            }
+            if (motor.maximumForce != float.PositiveInfinity && !forceReset)
+            {
+                motor.maximumForce += accSlider.Value * Time.deltaTime * 10f;
+                if (motor.maximumForce > accInfinity)
+                {
+                    motor.maximumForce = float.PositiveInfinity;
+                }
+                myJoint.angularXDrive = motor;
+            }
         }
+        //if (!isUsingMotor)
+        //{
+        //    myJoint.angularXMotion = ConfigurableJointMotion.Free;
+        //    isUsingMotor = true;
+        //}
+        float num = Velocity * deltaMultiplier;
+        float num2 = lastVelocity + (num - lastVelocity) * Time.deltaTime * speedLerpSmooth;
+    
+        if (allowControl && !autoBreakMode.IsActive && ((input >= 0f) ? input : (-input)) < 0.05f)
+        {
+            float num3 = 0.01f;
+            if (lastVelocity > 0f)
+            {
+                num2 = ((num2 <= num3) ? num2 : num3);
+            }
+            else if (lastVelocity < 0f)
+            {
+                num2 = ((num2 <= -num3) ? (-num3) : num2);
+            }
+        }
+        float num4 = num2 - lastVelocity;
+        if (((num4 >= 0f) ? num4 : (-num4)) > Mathf.Epsilon)
+        {
+            if (!noRigidbody && Rigidbody.IsSleeping())
+            {
+                Rigidbody.WakeUp();
+            }
+            if (myJoint.connectedBody.IsSleeping())
+            {
+                myJoint.connectedBody.WakeUp();
+            }
+            //motor.targetVelocity = num2;
+            //Rigidbody.AddRelativeTorque(Vector3.forward * num2, ForceMode.VelocityChange);
+            lastVelocity = num2;
+            myJoint.angularXDrive = motor;
+        }
+        Rigidbody.AddRelativeTorque(Vector3.forward * num2, ForceMode.VelocityChange);
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
-        this.noRigidbody = true;
+        noRigidbody = true;
     }
 }
 

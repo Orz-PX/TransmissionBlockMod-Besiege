@@ -83,7 +83,7 @@
 			<AccelerationSlider key="acceleration" />
 			<AutomaticToggle key="automatic" />
 			<ToggleModeToggle key="toggle-mode" />
-			<Axis>X</Axis>
+			<Axis>Z</Axis>
 			<MaxAngularSpeed>50</MaxAngularSpeed>
 		</Spinning>
 	</Modules>-->
