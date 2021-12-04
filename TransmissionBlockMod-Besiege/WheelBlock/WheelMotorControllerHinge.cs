@@ -199,7 +199,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
         {
             if (!noRigidbody)
             {
-                Rigidbody.maxAngularVelocity = maxAngularVel /** speedSlider.Value*/;
+                Rigidbody.maxAngularVelocity = maxAngularVel * speedSlider.Value;
             }
             deltaMultiplier = degreesPerSecond * 80f * -(float)((!flipped) ? -1f : 1f) * 0.05f;
             hasStarted = true;
