@@ -8,7 +8,7 @@ using Modding.Modules;
 using Modding.Modules.Official;
 using UnityEngine;
 
-class WheelBlockScript : BlockScript
+class   LWheelBlockScript : BlockScript
 {
 
     private MKey forwardKey, backwardKey;
@@ -16,7 +16,7 @@ class WheelBlockScript : BlockScript
     private MSlider speedSlider, acceleratedSlider;
     private MSlider springSlider, damperSlider;
     private MSlider staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider;
-    private MToggle ignoreBaseColliderToggle, toggleToggle, automaticToggle,autoBreakToggle;
+    private MToggle ignoreBaseColliderToggle, toggleToggle, automaticToggle,autoBreakToggle, suspensionToggle;
     private float springMultiplier = 500f;
     private float damperMultiplier = 10f;
     private float maxForceMultiplier = 5000f;
@@ -44,6 +44,7 @@ class WheelBlockScript : BlockScript
 
         automaticToggle = AddToggle("automatic", "automatic", false);
         autoBreakToggle = AddToggle("auto break", "auto break", false);
+        suspensionToggle = AddToggle("suspension", "suspension", true);
 
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
@@ -61,8 +62,16 @@ class WheelBlockScript : BlockScript
     {
         var lastscale = transform.localScale;
         BlockBehaviour.SetScale(Vector3.one);
-        tyre.CreateBoxes(18f);
-        BlockBehaviour.SetScale(lastscale);
+        tyre.CreateBoxes(90f, TyreCollider.TyreType.L_Wheel);
+
+        StartCoroutine(wait());
+
+        IEnumerator wait()
+        {
+            yield return new WaitUntil(() => tyre.Created);
+            BlockBehaviour.SetScale(lastscale);
+            yield break;
+        }
     }
 
     public override void OnSimulateStart()
@@ -70,6 +79,7 @@ class WheelBlockScript : BlockScript
         //Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
       
         var mass = massSlider.Value;
+        var suspension = suspensionToggle.IsActive;
         var spring = springSlider.Value * springMultiplier;
         var damper = damperSlider.Value * damperMultiplier;
         var maxForce = springSlider.Value * maxForceMultiplier;
@@ -77,7 +87,7 @@ class WheelBlockScript : BlockScript
         var staticFriction = staticFrictionSlider.Value;
         var dynamicFriction = dynamicFrictionSlider.Value;
 
-        tyre.Setup(spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass);
+        tyre.Setup(suspension,spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass);
         StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
 
         //addDynamicAxis();

@@ -7,14 +7,14 @@ using Modding;
 using UnityEngine;
 
 
-class HighSpeedWheelBloclScript : BlockScript
+class XXLWheelBloclScript : BlockScript
 {
     private MKey forwardKey, backwardKey;
     private MSlider massSlider;
     private MSlider speedSlider, acceleratedSlider;
     private MSlider springSlider, damperSlider;
     private MSlider staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider;
-    private MToggle ignoreBaseColliderToggle, toggleToggle, automaticToggle, autoBreakToggle;
+    private MToggle ignoreBaseColliderToggle, toggleToggle, automaticToggle, autoBreakToggle,suspensionToggle;
     private float springMultiplier = 500f;
     private float damperMultiplier = 10f;
     private float maxForceMultiplier = 5000f;
@@ -42,6 +42,7 @@ class HighSpeedWheelBloclScript : BlockScript
 
         automaticToggle = AddToggle("automatic", "automatic", false);
         autoBreakToggle = AddToggle("auto break", "auto break", false);
+        suspensionToggle = AddToggle("suspension", "suspension", true);
 
         Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
         Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
@@ -59,13 +60,21 @@ class HighSpeedWheelBloclScript : BlockScript
     {
         var lastscale = transform.localScale;
         BlockBehaviour.SetScale(Vector3.one);
-        tyre.CreateBoxes(5f, TyreCollider.TyreType.HighSpeed);
-        BlockBehaviour.SetScale(lastscale);
+        tyre.CreateBoxes(5f, TyreCollider.TyreType.XXL_Wheel);
+        StartCoroutine(wait());
+
+        IEnumerator wait()
+        {
+            yield return new WaitUntil(() => tyre.Created);
+            BlockBehaviour.SetScale(lastscale);
+            yield break;
+        }
     }
 
     public override void OnSimulateStart()
     {
         var mass = massSlider.Value;
+        var suspension = suspensionToggle.IsActive;
         var spring = springSlider.Value * springMultiplier;
         var damper = damperSlider.Value * damperMultiplier;
         var maxForce = springSlider.Value * maxForceMultiplier;
@@ -73,7 +82,7 @@ class HighSpeedWheelBloclScript : BlockScript
         var staticFriction = staticFrictionSlider.Value;
         var dynamicFriction = dynamicFrictionSlider.Value;
 
-        tyre.Setup(spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass);
+        tyre.Setup(suspension, spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass);
         StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
 
         wheelMotor = gameObject.AddComponent<WheelMotorControllerHinge>();

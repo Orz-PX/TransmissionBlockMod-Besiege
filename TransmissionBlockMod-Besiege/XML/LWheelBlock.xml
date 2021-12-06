@@ -20,10 +20,10 @@
 		 The ID must be unique among blocks in your mod.
 		 It may conflict with blocks of other mods, the mod loader handles this.
 		 The easiest way of assigning IDs is to use 1, 2, 3, etc.-->
-	<ID>390</ID>
+	<ID>392</ID>
 	
 	<!-- Name of the block, shown in the user interface. -->
-	<Name>Wheel Block</Name>
+	<Name>L Wheel Block</Name>
 	
 	<!-- TODO: Change the mass to something appropriate -->
 	<Mass>0.5</Mass>
@@ -58,7 +58,7 @@
 	<Fallback>LargeWheel</Fallback>
 	
 	<!-- <Script>Full Name of a BlockScript class, optional.</Script> -->
-	<Script>WheelBlockScript</Script>
+	<Script>LWheelBlockScript</Script>
 
 	<!--<ModuleMapperTypes>
 		<Key displayName="Forward" key="forward" default="UpArrow" />
