@@ -81,16 +81,17 @@ public class Tyre : MonoBehaviour
             //    if ((boxes.ToList().IndexOf(box) + 1) % 5 == 0) yield return 0;
             //    box.AddJoint(suspension); 
             //}
-            AddBoxesJoint(suspension);
-            SetBoxesStroke(Stroke);
-            SetBoxesJointDrive(spring, damper, maximumForce);
-            SetBoxesBodyAttribute(mass);
+            //AddBoxesJoint(suspension);
+            //SetBoxesStroke(Stroke);
+            //SetBoxesJointDrive(spring, damper, maximumForce);
+            //SetBoxesBodyAttribute(mass);
             yield break;
         }
     }
     private void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
     {
         var index = boxes.Length;
+
         for (var i = 0; i < index; i++)
         {
             var mc = boxes[i].GetComponent<MeshCollider>();
@@ -100,15 +101,8 @@ public class Tyre : MonoBehaviour
                 Physics.IgnoreCollision(mc, mc1);
             }
         }
-
         foreach (var box in boxes)
         {
-            //var mc = box.GetComponent<MeshCollider>();
-            //mc.material.bounciness = bounciness;
-            //mc.material.staticFriction = staticFriction;
-            //mc.material.dynamicFriction = dynamicFriction;
-            //mc.material.frictionCombine = frictionCombine;
-            //mc.material.bounceCombine = bounceCombine;
             box.SetPhysicMaterail(bounciness,staticFriction,dynamicFriction);
         }
     }
