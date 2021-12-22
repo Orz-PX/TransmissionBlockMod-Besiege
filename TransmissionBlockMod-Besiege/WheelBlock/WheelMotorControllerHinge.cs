@@ -107,16 +107,11 @@ public class WheelMotorControllerHinge : MonoBehaviour
                     yield return 0;
                 }
                 var pos = transform;
-                var pos1 = myJoint.connectedBody.transform;
-                var vector = Vector3.forward * 0.5f /** pos.localScale.z*/;
-                //var vector = myJoint.transform.TransformDirection(Vector3.forward * 0.5f * (1f + myJoint.transform.localScale.z));
-                //var vector1 = myJoint.connectedBody.transform.InverseTransformDirection(vector);
+                var vector = Vector3.forward * 0.5f;
                 var vector1 = myJoint.connectedBody.transform.InverseTransformPoint(pos.position + pos.forward * 0.5f * pos.localScale.z);
 
-                var vector2 = Vector3.forward * 0.5f * (1f + myJoint.transform.localScale.z);
                 myJoint.connectedAnchor = vector1;
-                myJoint.anchor = vector /*vector2*/;
-                Debug.Log(vector2);
+                myJoint.anchor = vector;
             }
         }
     }
