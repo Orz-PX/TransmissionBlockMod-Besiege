@@ -81,22 +81,13 @@ class XXLWheelBloclScript : BlockScript
         var bounciness = bouncinessSlider.Value;
         var staticFriction = staticFrictionSlider.Value;
         var dynamicFriction = dynamicFrictionSlider.Value;
+        var ignoreBaseCollider = ignoreBaseColliderToggle.IsActive;
 
-        tyre.Setup(suspension, spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass);
-        StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
+        tyre.Setup(suspension, spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass, ignoreBaseCollider);
 
         wheelMotor = gameObject.AddComponent<WheelMotorControllerHinge>();
         wheelMotor.Setup(forwardKey, backwardKey, speedSlider, acceleratedSlider, automaticToggle, toggleToggle, autoBreakToggle, Rigidbody, CJ);
 
-        IEnumerator ignoreBaseCollider(bool active)
-        {
-            if (active)
-            {
-                yield return new WaitUntil(() => CJ.connectedBody != null);
-                tyre.IgnorBaseBlockCollider();
-            }
-            yield break;
-        }
     }
     public override void SimulateUpdateAlways()
     {

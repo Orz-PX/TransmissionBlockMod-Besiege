@@ -65,23 +65,16 @@ public class WheelMotorControllerHinge : MonoBehaviour
         Rigidbody.solverVelocityIterations = 10;
         Rigidbody.solverIterations = 100;
 
-
         myJoint = configurableJoint;
-        //Debug.Log(myJoint.connectedBody.transform.InverseTransformPoint(myJoint.transform.position));
-        
-        myJoint.autoConfigureConnectedAnchor = false;
-        //Debug.Log(myJoint.connectedBody);
-        //myJoint.connectedAnchor = myJoint.connectedBody.transform.InverseTransformPoint(myJoint.transform.position);
-        myJoint.breakForce = myJoint.breakTorque = Mathf.Infinity;
         myJoint.axis = Vector3.forward;
         myJoint.secondaryAxis = Vector3.up;
         myJoint.angularXMotion = ConfigurableJointMotion.Free;
         myJoint.rotationDriveMode = RotationDriveMode.XYAndZ;
+        myJoint.breakForce = myJoint.breakTorque = Mathf.Infinity;
         motor = myJoint.angularXDrive;
         //motor.maximumForce = 1000f;
         //myJoint.angularXDrive = motor;
 
-        setConnectAnchorOnStart();
         setFalseOnStart();
 
         void setFalseOnStart()
@@ -94,24 +87,6 @@ public class WheelMotorControllerHinge : MonoBehaviour
                     yield return 0;
                 }
                 myJoint.swapBodies = false;
-            }
-        }
-
-        void setConnectAnchorOnStart()
-        {
-            StartCoroutine(wait());
-        IEnumerator wait()
-            {
-                for (int i = 0; i < 3; i++)
-                {
-                    yield return 0;
-                }
-                var pos = transform;
-                var vector = Vector3.forward * 0.5f;
-                var vector1 = myJoint.connectedBody.transform.InverseTransformPoint(pos.position + pos.forward * 0.5f * pos.localScale.z);
-
-                myJoint.connectedAnchor = vector1;
-                myJoint.anchor = vector;
             }
         }
     }

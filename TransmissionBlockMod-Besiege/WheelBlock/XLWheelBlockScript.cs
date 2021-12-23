@@ -86,9 +86,9 @@ class XLWheelBlockScript : BlockScript
         var bounciness = bouncinessSlider.Value;
         var staticFriction = staticFrictionSlider.Value;
         var dynamicFriction = dynamicFrictionSlider.Value;
+        var ignoreBaseCollider = ignoreBaseColliderToggle.IsActive;
 
-        tyre.Setup(suspension,spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass);
-        StartCoroutine(ignoreBaseCollider(ignoreBaseColliderToggle.IsActive));
+        tyre.Setup(suspension, spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass, ignoreBaseCollider);
 
         //addDynamicAxis();
         wheelMotor = gameObject.AddComponent<WheelMotorControllerHinge>();
@@ -105,16 +105,6 @@ class XLWheelBlockScript : BlockScript
             //jd.positionDamper = 5000f;
             CJ.angularXDrive = jd;
 
-        }
-
-        IEnumerator ignoreBaseCollider(bool active)
-        {
-            if (active)
-            {
-                yield return new WaitUntil(() => CJ.connectedBody != null);
-                tyre.IgnorBaseBlockCollider();
-            }
-            yield break;
         }
     }
     public override void SimulateUpdateAlways()

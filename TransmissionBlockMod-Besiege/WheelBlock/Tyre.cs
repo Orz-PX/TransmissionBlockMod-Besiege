@@ -26,11 +26,14 @@ public class Tyre : MonoBehaviour
     private MeshFilter meshFilter;
     [SerializeField]
     private MeshRenderer meshRenderer;
+    [SerializeField]
+    private float offsetForward;
     public void CreateBoxes(float angle, TyreCollider.TyreType tyreType = TyreCollider.TyreType.XL_Wheel, float radius = 1.5f, float offset_forward = 0.5f)
     {
         this.Radius = radius;
         this.parent = transform;
         this.TyreType = tyreType;
+        this.offsetForward = offset_forward;
         this.connectedBody = gameObject.GetComponent<Rigidbody>();
 
         tyre = new GameObject("Tyre");
@@ -67,11 +70,16 @@ public class Tyre : MonoBehaviour
             yield break;
         }
     }
-    public void Setup(bool suspension, float spring,float damper,float maximumForce,float bounciness,float staticFriction,float dynamicFriction,float mass)
+    public void Setup(bool suspension, float spring,float damper,float maximumForce,float bounciness,float staticFriction,float dynamicFriction,float mass,bool ignoreBaseCollider)
     {
+        var cj = GetComponent<ConfigurableJoint>();
+        cj.autoConfigureConnectedAnchor = false;
+
         this.Suspension = suspension;
 
         StartCoroutine(setup());
+        StartCoroutine(setConnectAnchor(offsetForward));
+        StartCoroutine(_ignoreBaseCollider(ignoreBaseCollider));
 
         IEnumerator setup()
         {
@@ -81,11 +89,34 @@ public class Tyre : MonoBehaviour
             //    if ((boxes.ToList().IndexOf(box) + 1) % 5 == 0) yield return 0;
             //    box.AddJoint(suspension); 
             //}
-            //AddBoxesJoint(suspension);
-            //SetBoxesStroke(Stroke);
-            //SetBoxesJointDrive(spring, damper, maximumForce);
-            //SetBoxesBodyAttribute(mass);
+            AddBoxesJoint(suspension);
+            SetBoxesStroke(Stroke);
+            SetBoxesJointDrive(spring, damper, maximumForce);
+            SetBoxesBodyAttribute(mass);
             yield break;
+        }
+        IEnumerator _ignoreBaseCollider(bool active)
+        {
+            if (active)
+            {
+                yield return new WaitUntil(() => cj.connectedBody != null);
+                this.IgnorBaseBlockCollider();
+            }
+            yield break;
+        }
+        IEnumerator setConnectAnchor(float offset_forward)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                yield return 0;
+            }
+            var trans = transform;
+            var trans1 = cj.connectedBody.transform;
+            var vector = Vector3.forward * offset_forward;
+            var vector1 = trans1.InverseTransformPoint(trans.position + trans.forward * offset_forward * trans.localScale.z);
+
+            cj.connectedAnchor = vector1;
+            cj.anchor = vector;
         }
     }
     private void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
@@ -104,6 +135,16 @@ public class Tyre : MonoBehaviour
         foreach (var box in boxes)
         {
             box.SetPhysicMaterail(bounciness,staticFriction,dynamicFriction);
+        }
+    }
+    private void IgnorBaseBlockCollider()
+    {
+        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>()?.connectedBody?.gameObject.GetComponentsInChildren<Collider>())
+        {
+            foreach (var box in boxes)
+            {
+                Physics.IgnoreCollision(box.GetComponent<MeshCollider>(), col);
+            }
         }
     }
     private void AddBoxesJoint(bool suspension)
@@ -155,16 +196,7 @@ public class Tyre : MonoBehaviour
             box.RefreshCenterOfMass(offset);
         }
     }
-    public void IgnorBaseBlockCollider()
-    {
-        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>()?.connectedBody?.gameObject.GetComponentsInChildren<Collider>())
-        {
-            foreach (var box in boxes)
-            {
-                Physics.IgnoreCollision(box.GetComponent<MeshCollider>(), col);
-            }
-        }
-    }
+   
     public Vector3[] GetAllVertices()
     {
         var index = boxes.Length;
