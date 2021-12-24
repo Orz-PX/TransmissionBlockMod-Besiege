@@ -62,7 +62,8 @@ class   LWheelBlockScript : BlockScript
     {
         var lastscale = transform.localScale;
         BlockBehaviour.SetScale(Vector3.one);
-        tyre.CreateBoxes(90f, TyreCollider.TyreType.L_Wheel);
+        tyre.CreateBoxes(45f, TyreCollider.TyreType.L_Wheel);
+        suspensionToggle.DisplayInMapper = false;
 
         StartCoroutine(wait());
 
@@ -79,7 +80,7 @@ class   LWheelBlockScript : BlockScript
         //Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
       
         var mass = massSlider.Value;
-        var suspension = suspensionToggle.IsActive;
+        var suspension = false;
         var spring = springSlider.Value * springMultiplier;
         var damper = damperSlider.Value * damperMultiplier;
         var maxForce = springSlider.Value * maxForceMultiplier;

@@ -307,10 +307,13 @@ public class TyreCollider :MonoBehaviour
     {
         this.Suspension = suspension;
 
-        addjoint( transform.parent.parent.GetComponent<Rigidbody>(),suspension);
-        SetJointAttribute();
+        if (suspension)
+        {
+            addjoint(transform.parent.parent.GetComponent<Rigidbody>());
+            SetJointAttribute();
+        }
 
-        void addjoint(Rigidbody connectedBody,bool _suspension)
+        void addjoint(Rigidbody connectedBody)
         {
             var cj = configurableJoint = gameObject.AddComponent<ConfigurableJoint>();
             cj.autoConfigureConnectedAnchor = false;
@@ -318,34 +321,34 @@ public class TyreCollider :MonoBehaviour
             cj.enablePreprocessing = false;
             cj.anchor = Vector3.zero;
             cj.axis = Vector3.forward;
-            cj.xMotion = _suspension ? ConfigurableJointMotion.Limited : ConfigurableJointMotion.Locked;
+            cj.xMotion = ConfigurableJointMotion.Limited;
             cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
         }
     }
     public void SetStroke(float stroke )
     {
-        //radius
-        //set connected anchor
-        var cj = GetComponent<ConfigurableJoint>();
-        var anchor = connectedAnchor;
         if (Suspension)
         {
+            //radius
+            //set connected anchor
+            var cj = GetComponent<ConfigurableJoint>();
+            var anchor = connectedAnchor;
             var vector = new Vector2(connectedAnchor.x, connectedAnchor.y);
             vector = Vector2.ClampMagnitude(vector, connectedAnchor.magnitude - stroke);
             anchor = new Vector3(vector.x, vector.y, connectedAnchor.z);
+            cj.connectedAnchor = anchor;
+
+            //stroke
+            //set linear limit
+            var _stroke = stroke;
+            _stroke = _stroke * 0.5f;
+
+            var softJointLimit = cj.linearLimit;
+            softJointLimit.limit = _stroke;
+            softJointLimit.contactDistance = _stroke;
+            cj.linearLimit = softJointLimit;
+            cj.targetPosition = new Vector3(_stroke, 0f, 0f);
         }
-        cj.connectedAnchor = anchor;
-
-        //stroke
-        //set linear limit
-        var _stroke = stroke;
-        _stroke = _stroke * 0.5f;
-
-        var softJointLimit = cj.linearLimit;
-        softJointLimit.limit = _stroke;
-        softJointLimit.contactDistance = _stroke;
-        cj.linearLimit = softJointLimit;
-        cj.targetPosition = new Vector3(_stroke, 0f, 0f);
     }
     //public void SetStroke(float stroke)
     //{
@@ -389,7 +392,7 @@ public class TyreCollider :MonoBehaviour
     //}
     public void SetJointDrive(float spring = 400f, float damper = 50f, float maximumForce = 500f)
     {
-        if (configurableJoint == null) return;
+        if (configurableJoint == null || Suspension == false) return;
 
         var jointDrive = configurableJoint.xDrive;
         jointDrive.positionSpring = spring;
@@ -399,7 +402,7 @@ public class TyreCollider :MonoBehaviour
     }
     public void SetJointAttribute(float breakForce = Mathf.Infinity, float breakTorque = Mathf.Infinity, bool enableCollision = false, bool enablePreprocessing = false, JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation, float projectionDistance = 0.001f, float projectionAngle = 3f)
     {
-        if (configurableJoint == null) return;
+        if (configurableJoint == null || Suspension == false) return;
 
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -424,7 +427,7 @@ public class TyreCollider :MonoBehaviour
     public void SetBodyAttribute(bool useGravity = true, float mass = 0.15f, float drag = 0f, float angularDrag = 0f, CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
     {
         var rb = gameObject.GetComponent<Rigidbody>();
-        if (rb == null) return;
+        if (rb == null || Suspension == false) return;
 
         rb.angularDrag = angularDrag;
         rb.useGravity = useGravity;

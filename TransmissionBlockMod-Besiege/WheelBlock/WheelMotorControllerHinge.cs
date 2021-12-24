@@ -211,11 +211,21 @@ public class WheelMotorControllerHinge : MonoBehaviour
         Velocity = input * speedSlider.Value;
         if (input == 0f)
         {
+            if (autoBreakMode.IsActive)
+            {
+                var single = motor.positionDamper;
+                single = Mathf.MoveTowards(single, 1750f, 10f * Time.deltaTime);
+                motor.positionDamper = single;
+                myJoint.angularXDrive = motor;
+            }
             motor.maximumForce = float.PositiveInfinity;
             forceReset = true;
         }
         else
         {
+            motor.positionDamper = 0;
+            myJoint.angularXDrive = motor;
+
             if (motor.maximumForce == float.PositiveInfinity && forceReset)
             {
                 motor.maximumForce = accSlider.Value;
@@ -269,7 +279,6 @@ public class WheelMotorControllerHinge : MonoBehaviour
         }
         Rigidbody.AddRelativeTorque(Vector3.forward * num2, ForceMode.VelocityChange);
     }
-
     private void OnDestroy()
     {
         noRigidbody = true;
