@@ -46,15 +46,7 @@ class XLWheelBlockScript : BlockScript
         autoBreakToggle = AddToggle("auto break", "auto break", false);
         suspensionToggle = AddToggle("suspension", "suspension", true);
 
-        Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
-        Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
-        Rigidbody.drag = Rigidbody.angularDrag = 0f;
-        Rigidbody.solverVelocityIterations = 1;
-        Rigidbody.solverIterations = 100;
-
         CJ = GetComponent<ConfigurableJoint>();
-        CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
-
         tyre = GetComponent<Tyre>() ?? gameObject.AddComponent<Tyre>();
     }
 
@@ -76,8 +68,6 @@ class XLWheelBlockScript : BlockScript
 
     public override void OnSimulateStart()
     {
-        //Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
-      
         var mass = massSlider.Value;
         var suspension = suspensionToggle.IsActive;
         var spring = springSlider.Value * springMultiplier;

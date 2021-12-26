@@ -12,8 +12,8 @@ public class WheelMotorControllerHinge : MonoBehaviour
     public float Velocity;
     public bool allowControl = true;
     public float degreesPerSecond = 1f;
-    public float maxAngularVel = 50f;
-    public Transform rotationArrow;
+    public float maxAngularVel = /*50f*/15f;
+    //public Transform rotationArrow;
     public float minAcc = 0.1f;
     public float maxAcc = 20f;
     public float accInfinity = 600f;
@@ -46,6 +46,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
     public MSlider SpeedSlider { get { return speedSlider; } }
     public MToggle ToggleModeToggle { get { return toggleMode; } }
     public Rigidbody Rigidbody { get { return rigidbody; } }
+    public float Damper { get { return motor.positionDamper; } private set { } }
 
     public void Setup(MKey forwardKey, MKey backwardKey, MSlider speedSlider, MSlider accSlider, MToggle automaticToggle, MToggle toggleMode, MToggle autoBreakMode, Rigidbody rigidbody, ConfigurableJoint configurableJoint)
     {
@@ -59,8 +60,9 @@ public class WheelMotorControllerHinge : MonoBehaviour
         this.rigidbody = rigidbody;
         noRigidbody = (Rigidbody == null);
 
-        //Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
-        //Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
+        Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
+        Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
+        Rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
         Rigidbody.solverVelocityIterations = 10;
         Rigidbody.solverIterations = 100;
@@ -68,6 +70,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
         myJoint = configurableJoint;
         myJoint.axis = Vector3.forward;
         myJoint.secondaryAxis = Vector3.up;
+        myJoint.enablePreprocessing = false;
         myJoint.angularXMotion = ConfigurableJointMotion.Free;
         myJoint.rotationDriveMode = RotationDriveMode.XYAndZ;
         myJoint.breakForce = myJoint.breakTorque = Mathf.Infinity;
@@ -82,10 +85,8 @@ public class WheelMotorControllerHinge : MonoBehaviour
             StartCoroutine(wait());
             IEnumerator wait()
             {
-                for (int i = 0; i < 10; i++)
-                {
-                    yield return 0;
-                }
+                yield return new WaitUntil(() => myJoint.connectedBody != null);
+
                 myJoint.swapBodies = false;
             }
         }
@@ -214,7 +215,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
             if (autoBreakMode.IsActive)
             {
                 var single = motor.positionDamper;
-                single = Mathf.MoveTowards(single, 1750f, 10f * Time.deltaTime);
+                single = Mathf.MoveTowards(single, 1800f, 300f * Time.deltaTime);
                 motor.positionDamper = single;
                 myJoint.angularXDrive = motor;
             }

@@ -46,15 +46,7 @@ class   LWheelBlockScript : BlockScript
         autoBreakToggle = AddToggle("auto break", "auto break", false);
         suspensionToggle = AddToggle("suspension", "suspension", true);
 
-        Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
-        Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
-        Rigidbody.drag = Rigidbody.angularDrag = 0f;
-        Rigidbody.solverVelocityIterations = 1;
-        Rigidbody.solverIterations = 100;
-
         CJ = GetComponent<ConfigurableJoint>();
-        CJ.breakForce = CJ.breakTorque = Mathf.Infinity;
-
         tyre = GetComponent<Tyre>() ?? gameObject.AddComponent<Tyre>();
     }
 
@@ -77,8 +69,6 @@ class   LWheelBlockScript : BlockScript
 
     public override void OnSimulateStart()
     {
-        //Rigidbody.maxAngularVelocity = speedSlider.Value * maxAngularVelocityMultiplier;
-      
         var mass = massSlider.Value;
         var suspension = false;
         var spring = springSlider.Value * springMultiplier;
@@ -91,77 +81,16 @@ class   LWheelBlockScript : BlockScript
 
         tyre.Setup(suspension,spring, damper, maxForce, bounciness, staticFriction, dynamicFriction, mass,ignoreBaseCollider);
 
-        //addDynamicAxis();
         wheelMotor = gameObject.AddComponent<WheelMotorControllerHinge>();
         wheelMotor.Setup(forwardKey, backwardKey, speedSlider, acceleratedSlider, automaticToggle, toggleToggle, autoBreakToggle, Rigidbody, CJ);
-
-        void addDynamicAxis()
-        {
-            CJ.axis = Vector3.forward;
-            CJ.secondaryAxis = Vector3.up;
-            CJ.angularXMotion = ConfigurableJointMotion.Free;
-
-            var jd = CJ.angularXDrive;
-            jd.maximumForce = 1000f;
-            //jd.positionDamper = 5000f;
-            CJ.angularXDrive = jd;
-
-        }
     }
     public override void SimulateUpdateAlways()
     {
         base.SimulateUpdateAlways();
         wheelMotor.UpdateBlock();
     }
-    //float input = 0f, single = 0f, single1 = 0f;
     public override void SimulateFixedUpdateAlways()
     {
-        //if (CJ == null || CJ?.connectedBody == null) return;
-
-        //if (!toggleToggle.IsActive)
-        //{
-        //    input = 0f;
-        //    if (forwardKey.IsHeld)
-        //    {
-        //        input += 1f;
-        //    }
-        //    if (backwardKey.IsHeld)
-        //    {
-        //        input += -1f;
-        //    }
-        //}
-        //else
-        //{
-        //    if (forwardKey.IsPressed)
-        //    {
-        //        input = input != 1f ? 1f : 0f;
-        //    }
-        //    if (backwardKey.IsPressed)
-        //    {
-        //        input = input != -1f ? -1f : 0f;
-        //    }
-        //}
-
-        //if (input == 0f)
-        //{
-        //    Rigidbody.WakeUp();
-        //    single = 0f;
-        //    single1 = Mathf.MoveTowards(single1, 750f, 10f * Time.deltaTime);
-        //    var jd = CJ.angularXDrive;
-        //    jd.positionDamper = single1;
-        //    CJ.angularXDrive = jd;
-        //}
-        //else
-        //{
-        //    Rigidbody.WakeUp();
-        //    var jd = CJ.angularXDrive;
-        //    jd.positionDamper = 0f;
-        //    CJ.angularXDrive = jd;
-        //    single1 = 0;
-        //    single = Mathf.MoveTowards(single, 11.5f, input == 0f ? 0f : acceleratedSlider.Value * Time.deltaTime * 10f);
-        //    Rigidbody.AddRelativeTorque(Vector3.forward * (Flipped ? -1f : 1f) * input * speedSlider.Value * single, ForceMode.VelocityChange);
-        //}
-
         wheelMotor.FixedUpdateBlock(Flipped);
     }
     public override void SimulateLateUpdateAlways()
