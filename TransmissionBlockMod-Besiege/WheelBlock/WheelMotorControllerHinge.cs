@@ -12,7 +12,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
     public float Velocity;
     public bool allowControl = true;
     public float degreesPerSecond = 1f;
-    public float maxAngularVel = /*50f*/15f;
+    public float maxAngularVel = /*50f*/10f;
     //public Transform rotationArrow;
     public float minAcc = 0.1f;
     public float maxAcc = 20f;
@@ -21,6 +21,8 @@ public class WheelMotorControllerHinge : MonoBehaviour
     public float minSpeed;
     public float maxSpeed = 2f;
     public float speedLerpSmooth = 26f;
+    public float damper = 50f;
+    public float targetBreakDamper = 1800f;
     public JointDrive motor;
     private ConfigurableJoint myJoint;
     private float input;
@@ -215,7 +217,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
             if (autoBreakMode.IsActive)
             {
                 var single = motor.positionDamper;
-                single = Mathf.MoveTowards(single, 1800f, 300f * Time.deltaTime);
+                single = Mathf.MoveTowards(single, targetBreakDamper, 300f * Time.deltaTime);
                 motor.positionDamper = single;
                 myJoint.angularXDrive = motor;
             }
@@ -224,7 +226,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
         }
         else
         {
-            motor.positionDamper = 0;
+            motor.positionDamper = damper;
             myJoint.angularXDrive = motor;
 
             if (motor.maximumForce == float.PositiveInfinity && forceReset)

@@ -29,6 +29,9 @@ public class Tyre : MonoBehaviour
     private MeshRenderer meshRenderer;
     [SerializeField]
     private float offsetForward;
+    private float springMultiplier = 500f;
+    private float damperMultiplier = 10f;
+    private float maxForceMultiplier = 5000f;
     public void CreateBoxes(float angle, TyreCollider.TyreType tyreType = TyreCollider.TyreType.XL_Wheel, float radius = 1.5f, float offset_forward = 0.5f)
     {
         this.Radius = radius;
@@ -87,7 +90,7 @@ public class Tyre : MonoBehaviour
             SetPhysicMaterail(bounciness, staticFriction, dynamicFriction);
             AddBoxesJoint(suspension);
             SetBoxesStroke(Stroke);
-            SetBoxesJointDrive(spring, damper, maximumForce);
+            SetBoxesJointDrive(spring * springMultiplier, damper * damperMultiplier, maximumForce * maxForceMultiplier);
             SetBoxesBodyAttribute(mass);
             yield break;
         }
@@ -122,7 +125,7 @@ public class Tyre : MonoBehaviour
             yield break;
         }
     }
-    private void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
+    private void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Multiply, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Multiply)
     {
         var index = colliders.Length;
 
@@ -137,7 +140,7 @@ public class Tyre : MonoBehaviour
         }
         foreach (var box in colliders)
         {
-            box.SetPhysicMaterail(bounciness,staticFriction,dynamicFriction);
+            box.SetPhysicMaterail(bounciness, staticFriction, dynamicFriction, frictionCombine, bounceCombine);
         }
     }
     private void IgnorBaseBlockCollider()
@@ -418,7 +421,7 @@ public class TyreCollider :MonoBehaviour
         cj.projectionDistance = projectionDistance;
         cj.projectionAngle = projectionAngle;
     }
-    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
+    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Multiply, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Multiply)
     {
         var mc = GetComponent<MeshCollider>();
         if (mc == null) return;

@@ -15,10 +15,10 @@ class XXLWheelBloclScript : BlockScript
     private MSlider springSlider, damperSlider;
     private MSlider staticFrictionSlider, dynamicFrictionSlider, bouncinessSlider;
     private MToggle ignoreBaseColliderToggle, toggleToggle, automaticToggle, autoBreakToggle, suspensionToggle;
-    private float springMultiplier = 500f;
-    private float damperMultiplier = 10f;
-    private float maxForceMultiplier = 5000f;
-    private float maxAngularVelocityMultiplier = 10f;
+    //private float springMultiplier = 500f;
+    //private float damperMultiplier = 10f;
+    //private float maxForceMultiplier = 5000f;
+    //private float maxAngularVelocityMultiplier = 10f;
 
     private ConfigurableJoint CJ;
     private Tyre tyre;
@@ -67,9 +67,9 @@ class XXLWheelBloclScript : BlockScript
     {
         var mass = massSlider.Value;
         var suspension = suspensionToggle.IsActive;
-        var spring = springSlider.Value * springMultiplier;
-        var damper = damperSlider.Value * damperMultiplier;
-        var maxForce = springSlider.Value * maxForceMultiplier;
+        var spring = springSlider.Value/* * springMultiplier*/;
+        var damper = damperSlider.Value/* * damperMultiplier*/;
+        var maxForce = springSlider.Value/* * maxForceMultiplier*/;
         var bounciness = bouncinessSlider.Value;
         var staticFriction = staticFrictionSlider.Value;
         var dynamicFriction = dynamicFrictionSlider.Value;
