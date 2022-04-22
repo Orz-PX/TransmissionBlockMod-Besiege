@@ -12,8 +12,8 @@ public class WheelMotorControllerHinge : MonoBehaviour
     public float Velocity;
     public bool allowControl = true;
     public float degreesPerSecond = 1f;
-    public float maxAngularVel = 50f;
-    public Transform rotationArrow;
+    public float maxAngularVel = /*50f*/10f;
+    //public Transform rotationArrow;
     public float minAcc = 0.1f;
     public float maxAcc = 20f;
     public float accInfinity = 600f;
@@ -21,6 +21,8 @@ public class WheelMotorControllerHinge : MonoBehaviour
     public float minSpeed;
     public float maxSpeed = 2f;
     public float speedLerpSmooth = 26f;
+    public float damper = 50f;
+    public float targetBreakDamper = 1800f;
     public JointDrive motor;
     private ConfigurableJoint myJoint;
     private float input;
@@ -46,6 +48,7 @@ public class WheelMotorControllerHinge : MonoBehaviour
     public MSlider SpeedSlider { get { return speedSlider; } }
     public MToggle ToggleModeToggle { get { return toggleMode; } }
     public Rigidbody Rigidbody { get { return rigidbody; } }
+    public float Damper { get { return motor.positionDamper; } private set { } }
 
     public void Setup(MKey forwardKey, MKey backwardKey, MSlider speedSlider, MSlider accSlider, MToggle automaticToggle, MToggle toggleMode, MToggle autoBreakMode, Rigidbody rigidbody, ConfigurableJoint configurableJoint)
     {
@@ -59,18 +62,20 @@ public class WheelMotorControllerHinge : MonoBehaviour
         this.rigidbody = rigidbody;
         noRigidbody = (Rigidbody == null);
 
-        //Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
-        //Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
+        Rigidbody.inertiaTensorRotation = new Quaternion(0, 0, 0.4f, 0.9f);
+        Rigidbody.inertiaTensor = new Vector3(0.4f, 0.4f, 0.7f);
+        Rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
         Rigidbody.drag = Rigidbody.angularDrag = 0f;
         Rigidbody.solverVelocityIterations = 10;
         Rigidbody.solverIterations = 100;
 
         myJoint = configurableJoint;
-        myJoint.breakForce = myJoint.breakTorque = Mathf.Infinity;
         myJoint.axis = Vector3.forward;
         myJoint.secondaryAxis = Vector3.up;
+        myJoint.enablePreprocessing = false;
         myJoint.angularXMotion = ConfigurableJointMotion.Free;
         myJoint.rotationDriveMode = RotationDriveMode.XYAndZ;
+        myJoint.breakForce = myJoint.breakTorque = Mathf.Infinity;
         motor = myJoint.angularXDrive;
         //motor.maximumForce = 1000f;
         //myJoint.angularXDrive = motor;
@@ -82,10 +87,8 @@ public class WheelMotorControllerHinge : MonoBehaviour
             StartCoroutine(wait());
             IEnumerator wait()
             {
-                for (int i = 0; i < 10; i++)
-                {
-                    yield return 0;
-                }
+                yield return new WaitUntil(() => myJoint.connectedBody != null);
+
                 myJoint.swapBodies = false;
             }
         }
@@ -211,11 +214,21 @@ public class WheelMotorControllerHinge : MonoBehaviour
         Velocity = input * speedSlider.Value;
         if (input == 0f)
         {
+            if (autoBreakMode.IsActive)
+            {
+                var single = motor.positionDamper;
+                single = Mathf.MoveTowards(single, targetBreakDamper, 300f * Time.deltaTime);
+                motor.positionDamper = single;
+                myJoint.angularXDrive = motor;
+            }
             motor.maximumForce = float.PositiveInfinity;
             forceReset = true;
         }
         else
         {
+            motor.positionDamper = damper;
+            myJoint.angularXDrive = motor;
+
             if (motor.maximumForce == float.PositiveInfinity && forceReset)
             {
                 motor.maximumForce = accSlider.Value;
@@ -269,7 +282,6 @@ public class WheelMotorControllerHinge : MonoBehaviour
         }
         Rigidbody.AddRelativeTorque(Vector3.forward * num2, ForceMode.VelocityChange);
     }
-
     private void OnDestroy()
     {
         noRigidbody = true;

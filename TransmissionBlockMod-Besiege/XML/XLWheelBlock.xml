@@ -20,10 +20,10 @@
 		 The ID must be unique among blocks in your mod.
 		 It may conflict with blocks of other mods, the mod loader handles this.
 		 The easiest way of assigning IDs is to use 1, 2, 3, etc.-->
-	<ID>395</ID>
+	<ID>390</ID>
 	
 	<!-- Name of the block, shown in the user interface. -->
-	<Name>High Speed Wheel Block</Name>
+	<Name>XL Wheel Block</Name>
 	
 	<!-- TODO: Change the mass to something appropriate -->
 	<Mass>0.5</Mass>
@@ -43,8 +43,8 @@
 	     Causes the Flipped property for the script to be set correctly. This is also used by
 		 certain modules, like Spinning or Steering.
 		 If an Arrow element is included, it is automatically flipped too. -->
-	<CanFlip>true</CanFlip>
-	
+	<!-- <CanFlip>true</CanFlip> -->
+		<CanFlip>true</CanFlip>
 	<!-- Specify that this block is a replacement of an old modded block.
 		 If this block has an equivalent that was created with the old community mod/block loader,
 		 specifying its id here will make the game load this block when loading machines that contain the old block. -->
@@ -57,15 +57,35 @@
 		 fallback, not modded blocks. -->
 	<Fallback>LargeWheel</Fallback>
 	
-	<Script>HighSpeedWheelBloclScript</Script>
-	
+	<!-- <Script>Full Name of a BlockScript class, optional.</Script> -->
+	<Script>XLWheelBlockScript</Script>
+
+	<!--<ModuleMapperTypes>
+		<Key displayName="Forward" key="forward" default="UpArrow" />
+		<Key displayName="Backward" key="backward" default="DownArrow" />
+		<Slider displayName="Speed" key="speed" min="0.0" max="5.0" default="1.0" unclamped="false"/>
+		<Slider displayName="Acceleration" key="acceleration" min="0.0" max="50.0" default="50.0" unclamped="false"/>
+		<Toggle displayName="Automatic" key="automatic" default="false" />
+		<Toggle displayName="Toggle Mode" key="toggle-mode" default="false" />
+	</ModuleMapperTypes>-->
+
+
 	<!-- Blocks can have certain predefined behaviour added without any custom code.
 		 These behaviours are called modules.
 		 The Shooting, Spewing, Spinning, and Steering modules are included by default
 		 and mods can also add new modules.
 		 Check the documentation for more information on how to use modules. -->
 	<!--<Modules>
-	
+		<Spinning>
+			<Forward key="forward" />
+			<Backward key="backward" />
+			<SpeedSlider key="speed" />
+			<AccelerationSlider key="acceleration" />
+			<AutomaticToggle key="automatic" />
+			<ToggleModeToggle key="toggle-mode" />
+			<Axis>Z</Axis>
+			<MaxAngularSpeed>50</MaxAngularSpeed>
+		</Spinning>
 	</Modules>-->
 	
 	<!-- Include to make block take damage. -->
@@ -173,5 +193,11 @@
 			<Rotation x="0.0" y="0.0" z="0.0" />
 			<Stickiness enabled="false" radius="0.5"/>
 		</AddingPoint>
+
+		<!--<AddingPoint>
+			<Position x="0.0" y="0.0" z="0.25" />
+			<Rotation x="0.0" y="0.0" z="0.0" />
+			<Stickiness enabled="false" radius="0.5"/>
+		</AddingPoint>-->
 	</AddingPoints>
 </Block>

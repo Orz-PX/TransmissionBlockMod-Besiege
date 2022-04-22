@@ -1,5 +1,6 @@
 ﻿using Modding;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,11 +12,13 @@ public class Tyre : MonoBehaviour
     public float Radius { get; private set; }
     public float Stroke { get; set; } = 0.25f;
     public TyreCollider.TyreType TyreType { get; private set; }
+    public bool Created { get; protected set; } = false;
+    public bool Connect { get; protected set; } = false;
 
     [SerializeField]
     private GameObject tyre;
     [SerializeField]
-    private TyreCollider[] boxes;
+    private TyreCollider[] colliders;
     [SerializeField]
     private Transform parent;
     [SerializeField]
@@ -24,11 +27,17 @@ public class Tyre : MonoBehaviour
     private MeshFilter meshFilter;
     [SerializeField]
     private MeshRenderer meshRenderer;
-    public void CreateBoxes(float angle, TyreCollider.TyreType tyreType = TyreCollider.TyreType.Vanilla, float radius = 1.5f, float offset_forward = 0.5f)
+    [SerializeField]
+    private float offsetForward;
+    private float springMultiplier = 500f;
+    private float damperMultiplier = 10f;
+    private float maxForceMultiplier = 5000f;
+    public void CreateBoxes(float angle, TyreCollider.TyreType tyreType = TyreCollider.TyreType.XL_Wheel, float radius = 1.5f, float offset_forward = 0.5f)
     {
         this.Radius = radius;
         this.parent = transform;
         this.TyreType = tyreType;
+        this.offsetForward = offset_forward;
         this.connectedBody = gameObject.GetComponent<Rigidbody>();
 
         tyre = new GameObject("Tyre");
@@ -36,110 +45,174 @@ public class Tyre : MonoBehaviour
         tyre.transform.position = parent.position;
         tyre.transform.rotation = parent.rotation;
 
-        int index = (int)(360f / angle);
+        StartCoroutine(createTyreCollider());
 
-        boxes = new TyreCollider[index];
-        //外圈box位置
-        for (var i = 0; i < index; i++)
+        //meshFilter = gameObject.AddComponent<MeshFilter>();
+        //meshRenderer = gameObject.AddComponent<MeshRenderer>();
+        //meshRenderer.material.color = Color.green;
+
+        IEnumerator createTyreCollider()
         {
-            var box = boxes[i] = new GameObject("Tyre Collider " + i).AddComponent<TyreCollider>();
-            box.transform.SetParent(tyre.transform);
-            box.CreateBox(angle * i, radius, offset_forward, tyreType);
+            var t = 0;
+            int index = (int)(360f / angle);
+
+            colliders = new TyreCollider[index];
+            //外圈box位置
+            for (var i = 0; i < index; i++)
+            {
+                if (t++ > 5)
+                {
+                    t = 0;
+                    yield return 0;
+                } 
+
+                var tc = colliders[i] = new GameObject("Tyre Collider " + i).AddComponent<TyreCollider>();
+                tc.transform.SetParent(tyre.transform);
+                tc.CreateTyreCollider(angle * i, radius, offset_forward, tyreType);
+            }
+            Created = true;
+            yield break;
         }
+    }
+    public void Setup(bool suspension, float spring,float damper,float maximumForce,float bounciness,float staticFriction,float dynamicFriction,float mass,bool ignoreBaseCollider)
+    {
+        var cj = GetComponent<ConfigurableJoint>();
+        cj.autoConfigureConnectedAnchor = false;
 
-        meshFilter = gameObject.AddComponent<MeshFilter>();
-        meshRenderer = gameObject.AddComponent<MeshRenderer>();
-        meshRenderer.material.color = Color.green;
+        this.Suspension = suspension;
+
+        StartCoroutine(setup());
+        StartCoroutine(setConnectAnchor(offsetForward));
+        StartCoroutine(_ignoreBaseCollider(ignoreBaseCollider));
+
+        IEnumerator setup()
+        {
+            SetPhysicMaterail(bounciness, staticFriction, dynamicFriction);
+            AddBoxesJoint(suspension);
+            SetBoxesStroke(Stroke);
+            SetBoxesJointDrive(spring * springMultiplier, damper * damperMultiplier, maximumForce * maxForceMultiplier);
+            SetBoxesBodyAttribute(mass);
+            yield break;
+        }
+        IEnumerator _ignoreBaseCollider(bool active)
+        {
+            if (active)
+            {
+                yield return new WaitUntil(() => cj.connectedBody != null);
+                this.IgnorBaseBlockCollider();
+            }
+            yield break;
+        }
+        IEnumerator setConnectAnchor(float offset_forward)
+        {
+            //for (int i = 0; i < 3; i++)
+            //{
+            //    yield return 0;
+            //}
+            //yield return new WaitUntil(() => cj.swapBodies == false);
+
+            yield return new WaitUntil(() => (cj.connectedBody != null) && (cj.swapBodies == false));
+
+            var trans = transform;
+            var trans1 = cj.connectedBody.transform;
+            var vector = Vector3.forward * offset_forward;
+            var vector1 = trans1.InverseTransformPoint(trans.position + trans.forward * offset_forward * trans.localScale.z);
+
+            cj.connectedAnchor = vector1;
+            cj.anchor = vector;
+
+            Connect = true;
+            yield break;
+        }
     }
-    public void Setup(float spring,float damper,float maximumForce,float bounciness,float staticFriction,float dynamicFriction,float mass)
+    private void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Multiply, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Multiply)
     {
-        SetPhysicMaterail(bounciness,staticFriction,dynamicFriction);
-        AddBoxesJoint();
-        SetBoxesStroke(Stroke);
-        SetBoxesJointDrive(spring,damper,maximumForce);
-        SetBoxesBodyAttribute(mass);
-    }
-    private void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
-    {
-        var index = boxes.Length;
+        var index = colliders.Length;
+
         for (var i = 0; i < index; i++)
         {
-            var mc = boxes[i].GetComponent<MeshCollider>();
+            var mc = colliders[i].GetComponent<MeshCollider>();
             for (var j = 0; j < index; j++)
             {
-                var mc1 = boxes[j].GetComponent<MeshCollider>();
+                var mc1 = colliders[j].GetComponent<MeshCollider>();
                 Physics.IgnoreCollision(mc, mc1);
             }
         }
-
-        foreach (var box in boxes)
+        foreach (var box in colliders)
         {
-            //var mc = box.GetComponent<MeshCollider>();
-            //mc.material.bounciness = bounciness;
-            //mc.material.staticFriction = staticFriction;
-            //mc.material.dynamicFriction = dynamicFriction;
-            //mc.material.frictionCombine = frictionCombine;
-            //mc.material.bounceCombine = bounceCombine;
-            box.SetPhysicMaterail(bounciness,staticFriction,dynamicFriction);
+            box.SetPhysicMaterail(bounciness, staticFriction, dynamicFriction, frictionCombine, bounceCombine);
         }
     }
-    private void AddBoxesJoint()
+    private void IgnorBaseBlockCollider()
     {
-        foreach (var box in boxes)
+        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>()?.connectedBody?.gameObject.GetComponentsInChildren<Collider>())
         {
-            box.AddJoint();
+            foreach (var box in colliders)
+            {
+                Physics.IgnoreCollision(box.GetComponent<MeshCollider>(), col);
+            }
         }
+    }
+    private void AddBoxesJoint(bool suspension)
+    {
+        foreach (var box in colliders)
+        {
+            //if (15 % boxes.ToList().IndexOf(box) == 0) yield return 0;
+            box.AddJoint(suspension);
+        }
+        //StartCoroutine(wait());
+
+        //IEnumerator wait()
+        //{
+        //    foreach (var box in boxes)
+        //    {
+        //        if (15 % boxes.ToList().IndexOf(box) == 0) yield return 0;
+        //        box.AddJoint(suspension);
+        //    }
+        //    yield break;
+        //}
     }
     public void SetBoxesStroke(float stroke = 0.25f)
     {
         Stroke = stroke;
 
-        foreach (var box in boxes)
+        foreach (var box in colliders)
         {
             box.SetStroke(stroke);
         }
     }
     public void SetBoxesJointDrive(float spring, float damper, float maximumForce)
     {
-        foreach (var box in boxes)
+        foreach (var box in colliders)
         {
             box.SetJointDrive(spring, damper, maximumForce);
         }
     }
     public void SetBoxesBodyAttribute(float mass)
     {
-        foreach (var box in boxes)
+        foreach (var box in colliders)
         {
             box.SetBodyAttribute(true, mass);
         }
     }
     public void RefreshCenterOfMass(float offset = 1f)
     {
-        foreach (var box in boxes)
+        foreach (var box in colliders)
         {
             box.RefreshCenterOfMass(offset);
         }
     }
-    public void IgnorBaseBlockCollider()
-    {
-        foreach (var col in connectedBody.gameObject.GetComponent<ConfigurableJoint>()?.connectedBody?.gameObject.GetComponentsInChildren<Collider>())
-        {
-            foreach (var box in boxes)
-            {
-                Physics.IgnoreCollision(box.GetComponent<MeshCollider>(), col);
-            }
-        }
-    }
+   
     public Vector3[] GetAllVertices()
     {
-        var index = boxes.Length;
+        var index = colliders.Length;
         var vectors = new Vector3[index * 2];
 
         var j = 0;
         for (var i = 0; i < index; i++)
         {
-            vectors[j++] = transform./*parent.*/TransformPoint(boxes[i].GetVertices()[0]);
-            vectors[j++] = transform./*parent.*/TransformPoint(boxes[i].GetVertices()[1]);
+            vectors[j++] = transform./*parent.*/TransformPoint(colliders[i].GetVertices()[0]);
+            vectors[j++] = transform./*parent.*/TransformPoint(colliders[i].GetVertices()[1]);
         }
         return vectors;
     }
@@ -180,10 +253,12 @@ public class Tyre : MonoBehaviour
 
 public class TyreCollider :MonoBehaviour
 {
-    private static ModMesh wheelMesh = wheelMesh ?? ModResource.GetMesh("wheel-obj");
-    private static ModMesh hswheelMesh = hswheelMesh ?? ModResource.GetMesh("hswheel-obj");
+    private static ModMesh lwheelMesh = lwheelMesh ?? ModResource.GetMesh("lwheel-obj");
+    private static ModMesh xlwheelMesh = xlwheelMesh ?? ModResource.GetMesh("xlwheel-obj");
+    private static ModMesh xxlwheelMesh = xxlwheelMesh ?? ModResource.GetMesh("xxlwheel-obj");
     public float Stroke { get; private set; }
     public float Radius { get; private set; }
+    public bool Suspension { get; private set; } 
     [SerializeField]
     private ConfigurableJoint configurableJoint;
     [SerializeField]
@@ -191,11 +266,18 @@ public class TyreCollider :MonoBehaviour
 
     public enum TyreType
     {
-        Vanilla = 0,
-        HighSpeed = 1,
+        L_Wheel = 0,
+        XL_Wheel = 1,
+        XXL_Wheel = 2,
     }
+    private Dictionary<TyreType, ModMesh> dic_meshFromType = new Dictionary<TyreType, ModMesh>()
+    {
+        { TyreType.L_Wheel,lwheelMesh },
+        { TyreType.XL_Wheel,xlwheelMesh },
+        { TyreType.XXL_Wheel,xxlwheelMesh },
+    };
 
-    public void CreateBox(float angle, float radius, float offset_forward,TyreType tyreType = TyreType.Vanilla)
+    public void CreateTyreCollider(float angle, float radius, float offset_forward,TyreType tyreType = TyreType.XL_Wheel)
     {
         var parent = transform.parent;
 
@@ -216,7 +298,7 @@ public class TyreCollider :MonoBehaviour
         var mc = GetComponent<MeshCollider>() ?? gameObject.AddComponent<MeshCollider>();
         var bb = parent.parent.GetComponent<BlockBehaviour>();
         bb.myBounds.childColliders.Add(mc);
-        mf.mesh = mc.sharedMesh = tyreType == TyreType.Vanilla ? wheelMesh : hswheelMesh;
+        mf.mesh = mc.sharedMesh = dic_meshFromType[tyreType];
         mc.convex = true;
      
 #if DEBUG
@@ -227,10 +309,15 @@ public class TyreCollider :MonoBehaviour
         this.connectedAnchor = parent.InverseTransformDirection(transform.position - parent.position);
 
     }
-    public void AddJoint()
+    public void AddJoint(bool suspension)
     {
-        addjoint( transform.parent.parent.GetComponent<Rigidbody>());
-        SetJointAttribute();
+        this.Suspension = suspension;
+
+        if (suspension)
+        {
+            addjoint(transform.parent.parent.GetComponent<Rigidbody>());
+            SetJointAttribute();
+        }
 
         void addjoint(Rigidbody connectedBody)
         {
@@ -238,32 +325,38 @@ public class TyreCollider :MonoBehaviour
             cj.autoConfigureConnectedAnchor = false;
             cj.connectedBody = connectedBody;
             cj.enablePreprocessing = false;
+            cj.swapBodies = false;
             cj.anchor = Vector3.zero;
             cj.axis = Vector3.forward;
             cj.xMotion = ConfigurableJointMotion.Limited;
-            cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion = ConfigurableJointMotion.Locked;
+            cj.yMotion = ConfigurableJointMotion.Locked;
+            cj.angularXMotion = cj.angularYMotion = cj.angularZMotion = cj.zMotion = cj.yMotion;
         }
     }
     public void SetStroke(float stroke )
     {
-        //radius
-        //set connected anchor
-        var cj = GetComponent<ConfigurableJoint>();
-        var vector = new Vector2(connectedAnchor.x, connectedAnchor.y);
-        vector = Vector2.ClampMagnitude(vector, connectedAnchor.magnitude - stroke);
-        var vector1 = new Vector3(vector.x, vector.y, connectedAnchor.z);
-        cj.connectedAnchor = vector1;
+        if (Suspension)
+        {
+            //radius
+            //set connected anchor
+            var cj = GetComponent<ConfigurableJoint>();
+            var anchor = connectedAnchor;
+            var vector = new Vector2(connectedAnchor.x, connectedAnchor.y);
+            vector = Vector2.ClampMagnitude(vector, connectedAnchor.magnitude - stroke);
+            anchor = new Vector3(vector.x, vector.y, connectedAnchor.z);
+            cj.connectedAnchor = anchor;
 
-        //stroke
-        //set linear limit
-        var _stroke = stroke;
-        _stroke = _stroke * 0.5f;
+            //stroke
+            //set linear limit
+            var _stroke = stroke;
+            _stroke = _stroke * 0.5f;
 
-        var softJointLimit = cj.linearLimit;
-        softJointLimit.limit = _stroke;
-        softJointLimit.contactDistance = _stroke;
-        cj.linearLimit = softJointLimit;
-        cj.targetPosition = new Vector3(_stroke, 0f, 0f);
+            var softJointLimit = cj.linearLimit;
+            softJointLimit.limit = _stroke;
+            softJointLimit.contactDistance = _stroke;
+            cj.linearLimit = softJointLimit;
+            cj.targetPosition = new Vector3(_stroke, 0f, 0f);
+        }
     }
     //public void SetStroke(float stroke)
     //{
@@ -307,7 +400,7 @@ public class TyreCollider :MonoBehaviour
     //}
     public void SetJointDrive(float spring = 400f, float damper = 50f, float maximumForce = 500f)
     {
-        if (configurableJoint == null) return;
+        if (configurableJoint == null || Suspension == false) return;
 
         var jointDrive = configurableJoint.xDrive;
         jointDrive.positionSpring = spring;
@@ -317,7 +410,7 @@ public class TyreCollider :MonoBehaviour
     }
     public void SetJointAttribute(float breakForce = Mathf.Infinity, float breakTorque = Mathf.Infinity, bool enableCollision = false, bool enablePreprocessing = false, JointProjectionMode projectionMode = JointProjectionMode.PositionAndRotation, float projectionDistance = 0.001f, float projectionAngle = 3f)
     {
-        if (configurableJoint == null) return;
+        if (configurableJoint == null || Suspension == false) return;
 
         var cj = configurableJoint;
         cj.breakForce = breakForce;
@@ -328,7 +421,7 @@ public class TyreCollider :MonoBehaviour
         cj.projectionDistance = projectionDistance;
         cj.projectionAngle = projectionAngle;
     }
-    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Maximum, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Minimum)
+    public void SetPhysicMaterail(float bounciness = 0f, float staticFriction = 0.5f, float dynamicFriction = 0.8f, PhysicMaterialCombine frictionCombine = PhysicMaterialCombine.Multiply, PhysicMaterialCombine bounceCombine = PhysicMaterialCombine.Multiply)
     {
         var mc = GetComponent<MeshCollider>();
         if (mc == null) return;
@@ -342,16 +435,15 @@ public class TyreCollider :MonoBehaviour
     public void SetBodyAttribute(bool useGravity = true, float mass = 0.15f, float drag = 0f, float angularDrag = 0f, CollisionDetectionMode collisionDetectionMode = CollisionDetectionMode.Discrete)
     {
         var rb = gameObject.GetComponent<Rigidbody>();
-        if (rb == null) return;
+        if (rb == null || Suspension == false) return;
 
+        rb.maxAngularVelocity = 100f;
         rb.angularDrag = angularDrag;
         rb.useGravity = useGravity;
         rb.mass = mass;
         rb.drag = drag;
         rb.solverIterations = 100;
-        rb.maxAngularVelocity = 100f;
-        rb.solverVelocityIterations = 1;
-        //rb.collisionDetectionMode = collisionDetectionMode;
+        rb.solverVelocityIterations = 10;
 
         RefreshCenterOfMass(1f);
 #if COM //render center of mass
@@ -368,7 +460,7 @@ public class TyreCollider :MonoBehaviour
     {
         var rb = gameObject.GetComponent<Rigidbody>();
         var distance = gameObject.transform.InverseTransformDirection(gameObject.transform.parent.position - gameObject.transform.position);
-        if (rb != null)
+        if (rb != null && Suspension)
         {
             rb.centerOfMass = Vector3.Scale(Vector3.forward * offset, distance);
         }

@@ -9,7 +9,7 @@
 	<Name>Transmission Block Mod</Name>
 	<Author>XultimateX</Author> <!-- FIX: Insert your name here. -->
 	<!-- Major.Minor.Build -->
-	<Version>0.9.49</Version>
+	<Version>0.9.55</Version>
 	
 	<Description>
 A newly created mod. <!-- FIX: Insert a short description here. -->
@@ -89,8 +89,9 @@ A newly created mod. <!-- FIX: Insert a short description here. -->
 	<Blocks>
 		<!-- <Block path="SomeBlock.xml" /> -->
 		<Block path="TransmissionBlock.xml" />
-		<Block path="WheelBlock.xml" />
-		<Block path="HighSpeedWheelBlock.xml" />
+		<Block path="LWheelBlock.xml" />
+		<Block path="XLWheelBlock.xml" />
+		<Block path="XXLWheelBlock.xml" />
 	</Blocks>
 	
 	<!-- Any entities (level objects) your mod adds to the game.
@@ -124,8 +125,9 @@ A newly created mod. <!-- FIX: Insert a short description here. -->
 		<!-- <Mesh name="some-mesh-name" path="some_mesh_file.obj" /> -->
 		<!-- <Texture name="some-texture-name" path="some_texture_file.png" /> -->
     <Mesh name ="main-obj" path ="TransmissionBlock\cylinder.obj"/>
-	<Mesh name ="wheel-obj" path ="WheelBlock\_model1.obj"/>
-	<Mesh name ="hswheel-obj" path ="WheelBlock\_model4.obj"/>
+	<Mesh name ="lwheel-obj" path ="WheelBlock\_model5.obj"/>
+	<Mesh name ="xlwheel-obj" path ="WheelBlock\_model1.obj"/>
+	<Mesh name ="xxlwheel-obj" path ="WheelBlock\_model4.obj"/>
     <Texture name="main-tex" path="TransmissionBlock\cylinder.png"/>
    <Texture name="Icon" path="Icon.png"/>
 	</Resources>
